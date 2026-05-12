@@ -27,8 +27,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
@@ -48,7 +48,7 @@ jobs:
           podman save -o /tmp/${{ env.IMAGE_NAME }}.tar localhost/${{ env.IMAGE_NAME }}:latest
           ls -lh /tmp/${{ env.IMAGE_NAME }}.tar
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: image
           path: /tmp/${{ env.IMAGE_NAME }}.tar
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: image, path: /tmp }
       - name: Ship + restart
         env:
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: image, path: /tmp }
       - name: Ship + restart
         env:
@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: image, path: /tmp }
       - name: Ship + restart
         env:
