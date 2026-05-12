@@ -116,13 +116,10 @@ function BootnodeDetails(props: { list: Bootnode[]; chainSpecUrl?: string; chain
                 <span class="ml-auto text-[10px] uppercase tracking-wider text-paper-dim">
                   <Show when={!probed()}>{browserReachable().length} peers</Show>
                   <Show when={probed() && pendingCount() > 0}>
-                    probing {pendingCount()}…
+                    checking…
                   </Show>
                   <Show when={probed() && pendingCount() === 0}>
-                    {upCount()} reachable
-                    <Show when={downCount() > 0}>
-                      <span class="ml-1 text-magenta">· {downCount()} down (see console)</span>
-                    </Show>
+                    {upCount()} {upCount() === 1 ? 'peer' : 'peers'}
                   </Show>
                 </span>
               </div>
