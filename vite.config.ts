@@ -379,23 +379,27 @@ function prerenderPlugin(): Plugin {
         );
       }
 
-      // Preload the two body weights (400 + 500) used everywhere on FCP so
-      // the browser starts fetching them in parallel with HTML parse instead
-      // of waiting for CSS layout to need them. Lighthouse's "LCP resource
-      // load delay" drops from ~1.6 s to ~100 ms on slow 4G with these in.
-      // `font-display: swap` already in the @fontsource CSS so fallback
-      // text paints immediately either way; preload just lets the final
-      // paint happen sooner.
+      // Preload exactly the two weights the homepage hero uses:
+      //   • 300 — the h1 `.h-display` (font-light) — this is the LCP element
+      //   • 400 — body paragraph + Quick connect block
+      // 500 is pill/button-only (below LCP critical path), 700 is a few
+      // accent headings deeper down — both fetched on demand after first
+      // paint, which is fine.
+      //
+      // Tags are inlined right after <meta name="theme-color"> so the
+      // browser's preload scanner finds them in the first ~500 bytes of
+      // HTML, before ~3 KB of JSON-LD scripts. That's where Lighthouse's
+      // "resource load delay" goes when preloads sit too low in <head>.
       const fontFiles = readdirSync(path.join(distDir, 'assets'))
-        .filter((n) => /^inter-latin-(400|500)-normal-.*\.woff2$/.test(n))
+        .filter((n) => /^inter-latin-(300|400)-normal-.*\.woff2$/.test(n))
         .sort();
       if (fontFiles.length) {
         const preloads = fontFiles
           .map((f) => `    <link rel="preload" as="font" type="font/woff2" href="/assets/${f}" crossorigin />`)
           .join('\n');
         template = template.replace(
-          /(\n\s*)<link rel="icon" href="\/favicon\.ico"/,
-          `\n${preloads}$1<link rel="icon" href="/favicon.ico"`,
+          /(<meta name="theme-color"[^>]*\/?>)/,
+          `$1\n${preloads}`,
         );
       }
       writeFileSync(path.join(distDir, 'index.html'), template);

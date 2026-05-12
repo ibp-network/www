@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+
+    <!-- LCP critical resources, positioned in the first ~300 bytes of head
+         so the browser's preload scanner discovers them before parsing the
+         JSON-LD blocks further down. Font preloads (weights 300 + 400) are
+         injected by prerenderPlugin at build time; the hero background is
+         the WebP behind the headline. -->
+    <link rel="preload" as="image" href="/figma-hero-bg.webp" type="image/webp" fetchpriority="high" />
+
     <title>IBP: Public RPC endpoints for Polkadot, Kusama & Asset Hub</title>
 
     <meta name="description" content="Public RPC endpoints for Polkadot, Kusama, and their Asset Hubs. No keys, no rate limits. GeoDNS-routed to the nearest operator. Code samples for PAPI, reactive-dot, Dedot, subxt, viem and ethers." />
@@ -46,13 +54,12 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/ibp-mark.svg" type="image/svg+xml" />
 
-    <!-- LCP boost: hero background discovered before the CSS that references it. -->
-    <link rel="preload" as="image" href="/figma-hero-bg.webp" type="image/webp" fetchpriority="high" />
-
-    <!-- Critical third-party origins. Pre-resolves DNS + opens TLS in parallel
-         with HTML parse so first dashboard fetch / chain WS doesn't wait. -->
-    <link rel="preconnect" href="https://ibdash.dotters.network:9000" crossorigin />
-    <link rel="preconnect" href="https://asset-hub-polkadot.dotters.network" crossorigin />
+    <!-- Cross-origin hosts we hit lazily after JS mounts (GeoDNS DoH lookup,
+         operator-logo hot-links). dns-prefetch only — preconnect would
+         occupy a TLS slot during the LCP window for a connection nothing
+         on the critical path needs. The dashboard API is same-origin now
+         (proxied through /api/ibdash); the chain WSS opens after the
+         snapshot card mounts, far past the preconnect's useful TTL. -->
     <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
     <link rel="dns-prefetch" href="https://api.cloudflare.com" />
 
