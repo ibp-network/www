@@ -1,0 +1,16 @@
+dist
+.output
+.vercel
+.netlify
+
+.env
+.env*.local
+
+node_modules
+
+.idea
+.vscode
+*.log
+
+.DS_Store
+Thumbs.db

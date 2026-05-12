@@ -1,0 +1,8 @@
+{
+  "label": "Light clients",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Trustless, in-browser Polkadot via smoldot. No hosted RPC dependency."
+  }
+}

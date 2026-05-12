@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>IBP: Public RPC endpoints for Polkadot, Kusama & Asset Hub</title>
+
+    <meta name="description" content="Public RPC endpoints for Polkadot, Kusama, and their Asset Hubs. No keys, no rate limits. GeoDNS-routed to the nearest operator. Code samples for PAPI, reactive-dot, Dedot, subxt, viem and ethers." />
+    <meta name="keywords" content="Polkadot RPC, Kusama RPC, Asset Hub Polkadot WSS, public RPC endpoint, PAPI, polkadot-api, reactive-dot, Dedot, subxt, viem, ethers, bootnodes, GeoDNS, smoldot, IBP, Infrastructure Builders Programme" />
+    <meta name="author" content="Infrastructure Builders' Programme" />
+    <link rel="canonical" href="__SITE_ORIGIN__" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="googlebot" content="index, follow" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Infrastructure Builders' Programme",
+      "alternateName": "IBP",
+      "url": "__SITE_ORIGIN__",
+      "logo": "__SITE_ORIGIN__/ibp-logo.svg",
+      "description": "A federation of operators running public RPC endpoints and bootnodes for the Polkadot ecosystem.",
+      "sameAs": [
+        "https://github.com/ibp-network",
+        "https://matrix.to/#/!tNVRcjndUHhSDzCKFF:matrix.org",
+        "https://x.com/IBP_DOT"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "IBP",
+      "url": "__SITE_ORIGIN__",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "__SITE_ORIGIN__/endpoints?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/ibp-mark.svg" type="image/svg+xml" />
+
+    <!-- LCP boost: hero background discovered before the CSS that references it. -->
+    <link rel="preload" as="image" href="/figma-hero-bg.webp" type="image/webp" fetchpriority="high" />
+
+    <!-- Critical third-party origins. Pre-resolves DNS + opens TLS in parallel
+         with HTML parse so first dashboard fetch / chain WS doesn't wait. -->
+    <link rel="preconnect" href="https://ibdash.dotters.network:9000" crossorigin />
+    <link rel="preconnect" href="https://asset-hub-polkadot.dotters.network" crossorigin />
+    <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
+    <link rel="dns-prefetch" href="https://api.cloudflare.com" />
+
+    <meta property="og:title" content="IBP: Public RPC endpoints for Polkadot" />
+    <meta property="og:description" content="Public RPC endpoints for Polkadot, Kusama, and their Asset Hubs. No keys, no rate limits. GeoDNS-routed to the nearest operator." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="IBP" />
+    <meta property="og:url" content="__SITE_ORIGIN__" />
+    <!-- og:image / twitter:image point at the host that actually serves the
+         file. canonical stays at ibp.network (semantic long-term home), but
+         the OG asset has to be where it's reachable so social previewers
+         don't fetch a 404 / wrong file. -->
+    <meta property="og:image" content="__SITE_ORIGIN__/og-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="IBP: Public RPC for Polkadot. GeoDNS-routed, no keys, no rate limits." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@IBP_DOT" />
+    <meta name="twitter:creator" content="@IBP_DOT" />
+    <meta name="twitter:title" content="IBP: Public RPC endpoints for Polkadot" />
+    <meta name="twitter:description" content="Public RPC endpoints for Polkadot, Kusama, and their Asset Hubs. GeoDNS-routed, no keys." />
+    <meta name="twitter:image" content="__SITE_ORIGIN__/og-card.png" />
+
+  </head>
+  <body>
+    <noscript>
+      <h1>IBP: Public RPC for Polkadot</h1>
+      <p>
+        Public WSS / HTTPS endpoints for Polkadot, Kusama, and their Asset Hubs.
+        No API keys, no rate limits. GeoDNS-routed to the operator closest to you.
+      </p>
+      <p>
+        Primary endpoint (Asset Hub Polkadot, the consumer chain):
+        <code>wss://asset-hub-polkadot.dotters.network</code>
+      </p>
+      <p>
+        Run a Polkadot client (PAPI, Dedot, reactive-dot, subxt, viem, ethers,
+        smoldot) against that URL. The full chain list, bootnodes, and EVM
+        endpoints live at <a href="/endpoints">/endpoints</a>; developer guides
+        at <a href="/build">/build</a>. JavaScript is required for the
+        interactive site, but the endpoints themselves work standalone.
+      </p>
+    </noscript>
+    <div id="root"></div>
+    <script src="/src/index.tsx" type="module"></script>
+  </body>
+</html>

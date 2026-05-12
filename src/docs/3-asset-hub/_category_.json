@@ -1,0 +1,8 @@
+{
+  "label": "Building on Asset Hub",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Asset Hub is the consumer chain: balances, assets, NFTs, EVM. Here's how to read and write them."
+  }
+}

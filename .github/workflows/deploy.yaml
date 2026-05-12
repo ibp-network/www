@@ -1,0 +1,139 @@
+name: Deploy IBP site
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      targets:
+        type: choice
+        description: 'Which hosts to deploy to'
+        required: true
+        default: 'ibp-rotko-net'
+        options:
+          - ibp-rotko-net
+          - ibp-network
+          - dotters-network
+          - all
+
+env:
+  IMAGE_NAME: ibp-rotko-net
+  CONTAINER_PORT: 44446
+
+# Build the redbean container once; ship the same image to whichever hosts
+# the trigger selected. Auto-deploys go to ibp.rotko.net only; multi-host
+# deploys are workflow_dispatch with `all`.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Build container
+        run: |
+          podman build -t ${{ env.IMAGE_NAME }}:latest .
+          podman save -o /tmp/${{ env.IMAGE_NAME }}.tar localhost/${{ env.IMAGE_NAME }}:latest
+          ls -lh /tmp/${{ env.IMAGE_NAME }}.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image
+          path: /tmp/${{ env.IMAGE_NAME }}.tar
+          retention-days: 1
+
+  deploy-rotko:
+    needs: build
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.targets == 'ibp-rotko-net' || github.event.inputs.targets == 'all'))
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: image, path: /tmp }
+      - name: Ship + restart
+        env:
+          HOST: ${{ secrets.IBP_ROTKO_NET_HOST }}
+          USER: ${{ secrets.IBP_ROTKO_NET_USER }}
+          KEY: ${{ secrets.IBP_ROTKO_NET_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$HOST" ] && [ -n "$USER" ] && [ -n "$KEY" ] || { echo "Missing secrets for ibp-rotko-net"; exit 1; }
+          mkdir -p ~/.ssh && echo "$KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          SSH="ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy $USER@$HOST"
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy /tmp/${{ env.IMAGE_NAME }}.tar "$USER@$HOST:/tmp/"
+          $SSH "podman load -i /tmp/${{ env.IMAGE_NAME }}.tar &&
+                podman stop ${{ env.IMAGE_NAME }} 2>/dev/null || true; podman rm ${{ env.IMAGE_NAME }} 2>/dev/null || true;
+                podman run -d --restart=always -p 127.0.0.1:${{ env.CONTAINER_PORT }}:80 --name ${{ env.IMAGE_NAME }} localhost/${{ env.IMAGE_NAME }}:latest &&
+                rm /tmp/${{ env.IMAGE_NAME }}.tar &&
+                sleep 2 && curl -fsS http://127.0.0.1:${{ env.CONTAINER_PORT }}/ > /dev/null"
+          rm -f ~/.ssh/id_deploy
+
+  deploy-ibp-network:
+    needs: build
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.targets == 'ibp-network' || github.event.inputs.targets == 'all')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: image, path: /tmp }
+      - name: Ship + restart
+        env:
+          HOST: ${{ secrets.IBP_NETWORK_HOST }}
+          USER: ${{ secrets.IBP_NETWORK_USER }}
+          KEY: ${{ secrets.IBP_NETWORK_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$HOST" ] && [ -n "$USER" ] && [ -n "$KEY" ] || { echo "Missing secrets for ibp-network"; exit 1; }
+          mkdir -p ~/.ssh && echo "$KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          SSH="ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy $USER@$HOST"
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy /tmp/${{ env.IMAGE_NAME }}.tar "$USER@$HOST:/tmp/"
+          $SSH "podman load -i /tmp/${{ env.IMAGE_NAME }}.tar &&
+                podman stop ${{ env.IMAGE_NAME }} 2>/dev/null || true; podman rm ${{ env.IMAGE_NAME }} 2>/dev/null || true;
+                podman run -d --restart=always -p 127.0.0.1:${{ env.CONTAINER_PORT }}:80 --name ${{ env.IMAGE_NAME }} localhost/${{ env.IMAGE_NAME }}:latest &&
+                rm /tmp/${{ env.IMAGE_NAME }}.tar &&
+                sleep 2 && curl -fsS http://127.0.0.1:${{ env.CONTAINER_PORT }}/ > /dev/null"
+          rm -f ~/.ssh/id_deploy
+
+  deploy-dotters:
+    needs: build
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.targets == 'dotters-network' || github.event.inputs.targets == 'all')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: image, path: /tmp }
+      - name: Ship + restart
+        env:
+          HOST: ${{ secrets.DOTTERS_NETWORK_HOST }}
+          USER: ${{ secrets.DOTTERS_NETWORK_USER }}
+          KEY: ${{ secrets.DOTTERS_NETWORK_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$HOST" ] && [ -n "$USER" ] && [ -n "$KEY" ] || { echo "Missing secrets for dotters-network"; exit 1; }
+          mkdir -p ~/.ssh && echo "$KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          SSH="ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy $USER@$HOST"
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy /tmp/${{ env.IMAGE_NAME }}.tar "$USER@$HOST:/tmp/"
+          $SSH "podman load -i /tmp/${{ env.IMAGE_NAME }}.tar &&
+                podman stop ${{ env.IMAGE_NAME }} 2>/dev/null || true; podman rm ${{ env.IMAGE_NAME }} 2>/dev/null || true;
+                podman run -d --restart=always -p 127.0.0.1:${{ env.CONTAINER_PORT }}:80 --name ${{ env.IMAGE_NAME }} localhost/${{ env.IMAGE_NAME }}:latest &&
+                rm /tmp/${{ env.IMAGE_NAME }}.tar &&
+                sleep 2 && curl -fsS http://127.0.0.1:${{ env.CONTAINER_PORT }}/ > /dev/null"
+          rm -f ~/.ssh/id_deploy

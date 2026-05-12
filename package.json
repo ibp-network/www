@@ -1,0 +1,38 @@
+{
+  "name": "ibp-site",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Infrastructure Builders' Programme — public site",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@iconify-json/mdi": "^1.2.3",
+    "@types/node": "^25.7.0",
+    "@unocss/preset-icons": "^66.5.4",
+    "@unocss/preset-mini": "^66.5.4",
+    "@unocss/preset-typography": "^66.5.4",
+    "@unocss/vite": "^66.5.4",
+    "typescript": "^5.9.3",
+    "vite-plugin-solid": "^2.11.10"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@solidjs/router": "^0.16.1",
+    "front-matter": "^4.0.2",
+    "globe.gl": "^2.45.3",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-html": "^16.0.1",
+    "rolldown-vite": "^7.3.1",
+    "solid-js": "^1.9.10"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@^7.3.1"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "label": "EVM on Asset Hub",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Solidity / EVM tooling against Polkadot's PolkaVM EVM compatibility layer."
+  }
+}
