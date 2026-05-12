@@ -1,9 +1,10 @@
-import { createMemo, createSignal, For, Show, Suspense } from 'solid-js';
+import { batch, createMemo, createSignal, For, Show, Suspense } from 'solid-js';
 import { A } from '@solidjs/router';
 import CopyableEndpoint from '@/components/CopyableEndpoint';
 import RoutedTo from '@/components/RoutedTo';
 import TestConnection from '@/components/TestConnection';
 import { useDocMeta } from '@/utils/title';
+import { probeBootnode, type ProbeStatus } from '@/utils/bootnode-probe';
 import {
   ecosystemLabel,
   useNetworkSnapshot,
@@ -21,9 +22,47 @@ function toProtocol(url: string, target: Protocol): string {
 }
 
 function BootnodeDetails(props: { list: Bootnode[]; chainSpecUrl?: string; chainSpecRawUrl?: string }) {
+  // Per-multiaddr probe status. Solid signal keyed by multiaddr; the
+  // probe utility itself caches results across renders, so toggling the
+  // <details> back open after a close doesn't re-probe.
+  const [status, setStatus] = createSignal<Record<string, ProbeStatus>>({});
+  const [probed, setProbed] = createSignal(false);
+
+  const browserReachable = () =>
+    props.list.filter((b) => b.transport === 'wss');
+
+  // Fire when the user expands the section. Probe all /wss bootnodes
+  // concurrently and update the status map as each resolves. Bundle
+  // updates inside `batch` so we don't trigger N separate re-renders
+  // when several probes settle in the same tick.
+  const startProbes = () => {
+    if (probed()) return;
+    setProbed(true);
+    const initial: Record<string, ProbeStatus> = {};
+    for (const b of browserReachable()) initial[b.multiaddr] = 'pending';
+    setStatus(initial);
+    for (const b of browserReachable()) {
+      probeBootnode(b.multiaddr).then((s) => {
+        batch(() => setStatus((prev) => ({ ...prev, [b.multiaddr]: s })));
+      });
+    }
+  };
+
+  const upCount = () =>
+    Object.values(status()).filter((s) => s === 'up').length;
+  const downCount = () =>
+    Object.values(status()).filter((s) => s === 'down').length;
+  const pendingCount = () =>
+    Object.values(status()).filter((s) => s === 'pending').length;
+
   return (
     <Show when={props.list.length > 0 || props.chainSpecRawUrl}>
-      <details class="mt-3 border-t border-ink-600 pt-3 group">
+      <details
+        class="mt-3 border-t border-ink-600 pt-3 group"
+        onToggle={(e) => {
+          if ((e.currentTarget as HTMLDetailsElement).open) startProbes();
+        }}
+      >
         <summary class="cursor-pointer list-none flex items-center justify-between text-left">
           <span class="text-xs font-medium uppercase tracking-wider text-paper-dim group-hover:text-paper transition-colors">
             <span class="text-cyan">Trustless access</span>
@@ -63,8 +102,11 @@ function BootnodeDetails(props: { list: Bootnode[]; chainSpecUrl?: string; chain
             </div>
           </Show>
 
-          {/* Bootnodes — for self-hosted full nodes */}
-          <Show when={props.list.length > 0}>
+          {/* Bootnodes — for self-hosted full nodes. Each /wss bootnode
+              gets a per-row liveness dot once the user has opened this
+              section. While pending we show all, so the user isn't
+              staring at an empty list during the ~4s probe window. */}
+          <Show when={browserReachable().length > 0}>
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <span class="i-mdi-server text-cyan" />
@@ -72,17 +114,44 @@ function BootnodeDetails(props: { list: Bootnode[]; chainSpecUrl?: string; chain
                   Bootnodes for full nodes
                 </span>
                 <span class="ml-auto text-[10px] uppercase tracking-wider text-paper-dim">
-                  {props.list.length} peers
+                  <Show when={!probed()}>{browserReachable().length} peers</Show>
+                  <Show when={probed() && pendingCount() > 0}>
+                    probing {pendingCount()}…
+                  </Show>
+                  <Show when={probed() && pendingCount() === 0}>
+                    {upCount()} reachable
+                    <Show when={downCount() > 0}>
+                      <span class="ml-1 text-magenta">· {downCount()} down (see console)</span>
+                    </Show>
+                  </Show>
                 </span>
               </div>
               <div class="flex flex-col gap-1.5">
-                <For each={props.list}>
-                  {(b) => (
-                    <CopyableEndpoint
-                      url={b.multiaddr}
-                      label={`${b.member} · ${b.transport.toUpperCase()}`}
-                    />
-                  )}
+                <For each={browserReachable()}>
+                  {(b) => {
+                    const s = () => status()[b.multiaddr] ?? 'pending';
+                    return (
+                      <Show when={s() !== 'down'}>
+                        <div class="flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            class="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                            classList={{
+                              'bg-paper-dim animate-pulse': s() === 'pending',
+                              'bg-cyan': s() === 'up',
+                            }}
+                            title={s() === 'pending' ? 'Probing…' : 'Reachable from your browser'}
+                          />
+                          <div class="flex-1 min-w-0">
+                            <CopyableEndpoint
+                              url={b.multiaddr}
+                              label={`${b.member} · ${b.transport.toUpperCase()}`}
+                            />
+                          </div>
+                        </div>
+                      </Show>
+                    );
+                  }}
                 </For>
               </div>
               <p class="mt-2 text-[11px] text-paper-dim leading-relaxed">
