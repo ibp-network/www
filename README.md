@@ -78,7 +78,7 @@ The dashboard API is reverse-proxied through `public/.init.lua` at `/api/ibdash/
 2. `wikiContentPlugin` — walks `src/docs`, `src/wiki`, `src/posts`, runs remark once, exposes three virtual modules. No remark in the runtime bundle.
 3. `configMirrorPlugin` — fetches the three `ibp-network/config` JSONs, writes them to `dist/data/`.
 4. `sitemapPlugin` — writes `dist/sitemap.xml`.
-5. `prerenderPlugin` — inlines CSS, injects the homepage hero SSG into `<div id="root">`, emits per-route HTML with title / OG / canonical / JSON-LD / `modulepreload`. Pre-gzips every `/assets/*` to a `.gz` sibling.
+5. `prerenderPlugin` — inlines CSS, injects the homepage hero SSG into `<div id="root">`, emits per-route HTML with title / OG / canonical / JSON-LD / `modulepreload`.
 
 ## Hosting
 
@@ -88,10 +88,21 @@ Container exposes port 80. Run on the host with `-p 127.0.0.1:44446:80`. The pub
 
 - SPA fallback: any non-file path serves `index.html` with HTTP 200.
 - `__SITE_ORIGIN__` placeholder substitution against the request `Host` header.
-- `/assets/*`: `Cache-Control: public, max-age=31536000, immutable` + pre-gzipped `Content-Encoding`.
+- `/assets/*`: `Cache-Control: public, max-age=31536000, immutable`; redbean auto-gzips on response.
 - `/data/*`: 1 h cache.
 - `/api/ibdash/*`: reverse proxy + 1 h in-process cache + stale-on-failure.
 - HSTS, X-Content-Type-Options, X-Frame-Options on every response.
+
+### Sandbox
+
+Redbean self-jails before serving any traffic, so an operator does not need to layer AppArmor / SELinux / a separate reverse-proxy ACL on top.
+
+- **`pledge()`**: each accepted-connection worker runs with a syscall allowlist of `stdio rpath inet` — no `cpath` (no file creation), no `exec` (no shelling out from Lua), no `proc` (no further fork). Anything outside the set traps `SIGSYS` and kills only that worker. On Linux this compiles down to a seccomp-bpf filter installed via `prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, …)`.
+- **`unveil()`**: the visible filesystem is locked to the running `.com` archive only. Every other path returns `ENOENT` at the kernel, regardless of UID. The whole `dist/` tree is mmap'd from the PKZIP central directory inside the binary — there is no real on-disk asset tree to compromise.
+- **Statically linked TLS**: mbedTLS is in the binary, so no `dlopen`, no `prot_exec`, no shared-library surface.
+- **Blast radius**: a successful exploit of the Lua handler can read assets we already serve publicly and make outbound HTTPS calls via `Fetch()` (that's what `inet` is for, the ibdash proxy needs it). It cannot write to disk, escalate, read the host filesystem, fork-exec, or open arbitrary ports. Each worker is short-lived and isolated.
+
+The container is port-bound to `127.0.0.1:44446` on the host. We recommend running it under rootless podman — inside the container UID 0 maps to the operator's unprivileged host user, so the pledge sandbox + rootless namespacing compose into two independent layers. No `--cap-add`, no `--privileged`.
 
 ## Deploy
 

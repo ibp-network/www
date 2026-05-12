@@ -169,28 +169,22 @@ function OnHttpRequest()
       return
    end
 
-   -- /assets/* — fingerprinted, never change. We serve them via Write() so
+   -- /assets/* — fingerprinted, never change. Write() the raw bytes so
    -- our Cache-Control: immutable header sticks (redbean's ServeAsset
-   -- always overrides SetHeader with its ProgramCache default). For
-   -- compression, the build pre-gzips every asset to a .gz sibling; we
-   -- send that when the client accepts gzip, raw bytes otherwise.
+   -- always overrides SetHeader with its ProgramCache default).
+   --
+   -- Compression: redbean auto-gzips compressible MIME types on the way
+   -- out. We do NOT set Content-Encoding ourselves, and we don't pre-gzip
+   -- to a .gz sibling, because doing either makes redbean wrap our body
+   -- in a second gzip layer (deflate-stored block around the inner gz
+   -- bytes). Browser decodes once, hits inner gzip magic, throws
+   -- "SyntaxError: Invalid or unexpected token at 1:0".
    if path:match('^/assets/') then
-      local accept = GetHeader('Accept-Encoding') or ''
-      local body
-      local encoding
-      if accept:find('gzip') then
-         body = LoadAsset(path .. '.gz')
-         if body then encoding = 'gzip' end
-      end
-      if not body then
-         body = LoadAsset(path)
-      end
+      local body = LoadAsset(path)
       if body then
          SetStatus(200)
          SetHeader('Content-Type', mimeOf(path))
          SetHeader('Cache-Control', 'public, max-age=31536000, immutable')
-         SetHeader('Vary', 'Accept-Encoding')
-         if encoding then SetHeader('Content-Encoding', encoding) end
          Write(body)
          return
       end

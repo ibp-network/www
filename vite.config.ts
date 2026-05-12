@@ -3,7 +3,6 @@ import solidPlugin from 'vite-plugin-solid';
 import UnocssPlugin from '@unocss/vite';
 import path from 'node:path';
 import { readdirSync, statSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
 import { buildContentTrees } from './src/data/wiki-build';
 import type { WikiCategory } from './src/data/wiki-types';
 
@@ -450,28 +449,6 @@ function prerenderPlugin(): Plugin {
         writeFileSync(path.join(dir, 'index.html'), rewriteForRoute(template, m, chunkByRoute(m.url)));
       }
       console.log(`[prerender] wrote ${routes.length} per-route HTML files`);
-
-      // Pre-gzip every fingerprinted /assets/* file. The .init.lua serves
-      // the .gz sibling with `Content-Encoding: gzip` when the client
-      // accepts gzip, and `Cache-Control: public, max-age=31536000, immutable`
-      // either way. Pre-compression at level 9 lets us stop fighting
-      // redbean's ServeAsset auto-Cache-Control entirely — we Write() the
-      // bytes manually so SetHeader sticks.
-      let gzipped = 0;
-      let savedBytes = 0;
-      for (const name of readdirSync(assetDir)) {
-        if (name.endsWith('.gz')) continue;
-        const full = path.join(assetDir, name);
-        if (!statSync(full).isFile()) continue;
-        const raw = readFileSync(full);
-        const gz = gzipSync(raw, { level: 9 });
-        if (gz.length < raw.length) {
-          writeFileSync(full + '.gz', gz);
-          gzipped++;
-          savedBytes += raw.length - gz.length;
-        }
-      }
-      console.log(`[prerender] pre-gzipped ${gzipped} assets, saved ${(savedBytes / 1024).toFixed(1)} KB on the wire`);
     },
   };
 }
