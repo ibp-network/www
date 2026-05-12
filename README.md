@@ -95,7 +95,7 @@ Container exposes port 80. Run on the host with `-p 127.0.0.1:44446:80`. The pub
 
 ## Deploy
 
-`.github/workflows/deploy.yaml`. Build job typechecks, builds, packs the container, uploads the image as an artifact. Three deploy jobs, each gated by the dispatch input, download the artifact, scp to the target host, `podman load` + restart, smoke-test with curl. Failed smoke leaves the prior container stopped.
+`.github/workflows/deploy.yaml`. Build job typechecks, builds, packs the container with podman, uploads the image as an artifact. Three deploy jobs, each gated by the dispatch input, download the artifact, scp to the target host, load + restart the container (podman or docker, whichever the host has), smoke-test with curl. Failed smoke leaves the prior container stopped.
 
 ```
 push to master            → ibp-rotko-net
@@ -103,9 +103,9 @@ workflow_dispatch (gh UI) → ibp-rotko-net | ibp-network | dotters-network | al
 ```
 
 ```
-gh workflow run deploy.yaml --repo ibp-network/www.ibp.network -f targets=ibp-rotko-net
-gh workflow run deploy.yaml --repo ibp-network/www.ibp.network -f targets=all
-gh run watch                --repo ibp-network/www.ibp.network
+gh workflow run deploy.yaml --repo ibp-network/www -f targets=ibp-rotko-net
+gh workflow run deploy.yaml --repo ibp-network/www -f targets=all
+gh run watch                --repo ibp-network/www
 ```
 
 ### Secrets
@@ -126,9 +126,9 @@ Generating a key for a new target:
 ssh-keygen -t ed25519 -f /tmp/ibp_deploy -C 'ibp-site github-actions deploy' -N ''
 cat /tmp/ibp_deploy.pub | ssh <user>@<host> 'cat >> ~/.ssh/authorized_keys'
 
-gh secret set <TARGET>_HOST --repo ibp-network/www.ibp.network --body "<host>"
-gh secret set <TARGET>_USER --repo ibp-network/www.ibp.network --body "<user>"
-gh secret set <TARGET>_KEY  --repo ibp-network/www.ibp.network < /tmp/ibp_deploy
+gh secret set <TARGET>_HOST --repo ibp-network/www --body "<host>"
+gh secret set <TARGET>_USER --repo ibp-network/www --body "<user>"
+gh secret set <TARGET>_KEY  --repo ibp-network/www < /tmp/ibp_deploy
 ```
 
 Host requirements: podman or docker (the deploy script detects either), port `127.0.0.1:44446` free, upstream HAProxy (or equivalent) routing the public hostname to that loopback.
