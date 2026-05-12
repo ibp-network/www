@@ -45,7 +45,7 @@ const localMeta: Record<string, { region: string; city: string; country: string 
   Amforc:           { region: 'Europe',          city: 'Zurich',    country: 'Switzerland' },
   Dwellir:          { region: 'Africa',          city: 'Lagos',     country: 'Nigeria' },
   Gatotech:         { region: 'Central America', city: 'San José',  country: 'Costa Rica' },
-  RadiumBlock:      { region: 'Asia',            city: 'Bangalore', country: 'India' },
+  RadiumBlock:      { region: 'Asia',            city: 'Bengaluru', country: 'India' },
   'Rotko Networks': { region: 'Asia',            city: 'Bangkok',   country: 'Thailand' },
   'Stake Plus':     { region: 'North America',   city: 'Ashburn',   country: 'USA' },
   Turboflakes:      { region: 'Europe',          city: 'Lisbon',    country: 'Portugal' },

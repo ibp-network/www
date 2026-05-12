@@ -34,7 +34,7 @@ Seven active operators as of May 2026:
 | Amforc | Zurich, CH | Europe |
 | Dwellir | Lagos, NG | Africa |
 | Gatotech | San José, CR | Central America |
-| RadiumBlock | Bangalore, IN | Asia |
+| RadiumBlock | Bengaluru, IN | Asia |
 | Rotko Networks | Bangkok, TH | Asia |
 | Stake Plus | Ashburn, US | North America |
 | Turboflakes | Lisbon, PT | Europe |

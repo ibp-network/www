@@ -14,7 +14,7 @@ Seven active operators as of May 2026. All operate at the same service level (no
 | Gatotech | San José, CR | Central America | Jan 2023 | `@gatotech:matrix.org` |
 | Turboflakes | Lisbon, PT | Europe | Feb 2023 | `@turboflakes:matrix.org` |
 | Dwellir | Lagos, NG | Africa | Apr 2023 | `@gustavden3:matrix.org` |
-| RadiumBlock | Bangalore, IN | Asia | Sep 2023 | `@radiumblock:matrix.org` |
+| RadiumBlock | Bengaluru, IN | Asia | Sep 2023 | `@radiumblock:matrix.org` |
 | Rotko Networks | Bangkok, TH | Asia | Oct 2023 | `@hitchhooker:matrix.org` |
 
 The canonical roster (with public ServiceIPv4 / IPv6 addresses, per-chain assignments, and member logos) lives at [`ibp-network/config`](https://github.com/ibp-network/config). The live snapshot is rendered at [/members](/members).
