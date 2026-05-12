@@ -1,8 +1,10 @@
 name: Deploy IBP site
 
+# Manual only. Every push to master used to auto-deploy ibp-rotko-net;
+# moved off that because deploys are a deliberate action, not a side-effect
+# of pushing a typo fix. Use `gh workflow run deploy.yaml -f targets=...`
+# or the "Run workflow" button on the Actions tab.
 on:
-  push:
-    branches: [master, main]
   workflow_dispatch:
     inputs:
       targets:
@@ -19,10 +21,6 @@ on:
 env:
   IMAGE_NAME: ibp-rotko-net
   CONTAINER_PORT: 44446
-
-# Build the redbean container once; ship the same image to whichever hosts
-# the trigger selected. Auto-deploys go to ibp.rotko.net only; multi-host
-# deploys are workflow_dispatch with `all`.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -56,9 +54,7 @@ jobs:
 
   deploy-rotko:
     needs: build
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && (github.event.inputs.targets == 'ibp-rotko-net' || github.event.inputs.targets == 'all'))
+    if: github.event.inputs.targets == 'ibp-rotko-net' || github.event.inputs.targets == 'all'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -94,9 +90,7 @@ jobs:
 
   deploy-ibp-network:
     needs: build
-    if: |
-      github.event_name == 'workflow_dispatch' &&
-      (github.event.inputs.targets == 'ibp-network' || github.event.inputs.targets == 'all')
+    if: github.event.inputs.targets == 'ibp-network' || github.event.inputs.targets == 'all'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -132,9 +126,7 @@ jobs:
 
   deploy-dotters:
     needs: build
-    if: |
-      github.event_name == 'workflow_dispatch' &&
-      (github.event.inputs.targets == 'dotters-network' || github.event.inputs.targets == 'all')
+    if: github.event.inputs.targets == 'dotters-network' || github.event.inputs.targets == 'all'
     runs-on: ubuntu-latest
     environment: production
     steps:

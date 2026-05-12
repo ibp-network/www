@@ -97,10 +97,7 @@ Container exposes port 80. Run on the host with `-p 127.0.0.1:44446:80`. The pub
 
 `.github/workflows/deploy.yaml`. Build job typechecks, builds, packs the container with podman, uploads the image as an artifact. Three deploy jobs, each gated by the dispatch input, download the artifact, scp to the target host, load + restart the container (podman or docker, whichever the host has), smoke-test with curl. Failed smoke leaves the prior container stopped.
 
-```
-push to master            → ibp-rotko-net
-workflow_dispatch (gh UI) → ibp-rotko-net | ibp-network | dotters-network | all
-```
+Manual trigger only. `gh workflow run deploy.yaml -f targets=<target>` or the "Run workflow" button on the Actions tab. Choices: `ibp-rotko-net`, `ibp-network`, `dotters-network`, `all`.
 
 ```
 gh workflow run deploy.yaml --repo ibp-network/www -f targets=ibp-rotko-net
