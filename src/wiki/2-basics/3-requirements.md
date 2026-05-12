@@ -58,7 +58,7 @@ By default each member operates, at every active chain:
 - **Public RPC endpoints** (WSS and HTTPS) for the chain assignment list.
 - **Bootnodes**, both TCP and WSS variants (the WSS variant is what makes smoldot light-client work in browsers).
 - **Archive nodes** where the chain assignment requires them.
-- **Relay-chain validators** as part of the Polkadot/Kusama validator set, and **Bulletin-chain validators** as part of the new mandate.
+- **Relay-chain validators** as part of the Polkadot/Kusama validator set.
 - **Collators** for any parachain that funds continued IBP service (currently Hydration).
 - **Per-member Prometheus exporters** scraped into the shared IBP dashboards, so curators can verify uptime independently.
 

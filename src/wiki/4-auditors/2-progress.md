@@ -19,7 +19,7 @@ The short timeline of how the IBP became what it is today. For per-cycle audit d
 
 **April 2024.** [Polkadot Referendum 649](https://polkadot.polkassembly.io/referenda/649) brings the programme onto the Polkadot treasury alongside Kusama. Curator multisig is restructured to a 3-of-5.
 
-**Through 2024.** Paseo launches alongside Westend as the community-run testnet; IBP coverage pivots to Paseo. Westend continues to operate upstream. Roster operates at peak size: the eleven active members carried through from the 2023 expansion.
+**Through 2024.** Paseo launches alongside Westend as the community-run testnet; IBP coverage pivots to Paseo. Westend continues to operate upstream but IBP later discontinues its own Westend nodes in early 2026 as part of the cost-saving feedback to the top-up proposal. Roster operates at peak size: the eleven active members carried through from the 2023 expansion.
 
 ## 2025: Full-coverage operation
 

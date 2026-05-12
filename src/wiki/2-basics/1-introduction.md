@@ -49,7 +49,7 @@ The seven members differ in city, hardware vendor, and ISPs. What they share is 
 - **Member-owned hardware** in member-contracted colocation. No cloud rentals in the production path.
 - **Current-generation server class**: EPYC or Xeon CPUs, ECC RAM, PCIe 4.0+ NVMe, IPMI-managed BMCs.
 - **High-availability at the site**: clustered hypervisor, replicated storage, dual power feeds, dual ISPs, rack-distributed quorum.
-- **99.9% per-site target** (≈ 43 minutes of unplanned downtime per month per member). The seven-member GeoDNS rotation absorbs single-operator outages, so aggregate availability across the rotation is materially higher than any single member's figure.
+- **99% per colocation, 99.99% global service**, curator-polled every 5 minutes. The per-member target leaves room for hardware fails, ISP reroutes, datacentre maintenance; the GeoDNS rotation absorbs single-operator outages so the aggregate users see is four nines.
 - **Open-source stack**: Proxmox, Ceph, HAProxy, Ubuntu, Prometheus, Grafana. No licence lock-in.
 - **Renewable power** or carbon offsets at the datacentre.
 
