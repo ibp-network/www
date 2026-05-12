@@ -379,29 +379,10 @@ function prerenderPlugin(): Plugin {
         );
       }
 
-      // Preload exactly the two weights the homepage hero uses:
-      //   • 300 — the h1 `.h-display` (font-light) — this is the LCP element
-      //   • 400 — body paragraph + Quick connect block
-      // 500 is pill/button-only (below LCP critical path), 700 is a few
-      // accent headings deeper down — both fetched on demand after first
-      // paint, which is fine.
-      //
-      // Tags are inlined right after <meta name="theme-color"> so the
-      // browser's preload scanner finds them in the first ~500 bytes of
-      // HTML, before ~3 KB of JSON-LD scripts. That's where Lighthouse's
-      // "resource load delay" goes when preloads sit too low in <head>.
-      const fontFiles = readdirSync(path.join(distDir, 'assets'))
-        .filter((n) => /^inter-latin-(300|400)-normal-.*\.woff2$/.test(n))
-        .sort();
-      if (fontFiles.length) {
-        const preloads = fontFiles
-          .map((f) => `    <link rel="preload" as="font" type="font/woff2" href="/assets/${f}" crossorigin />`)
-          .join('\n');
-        template = template.replace(
-          /(<meta name="theme-color"[^>]*\/?>)/,
-          `$1\n${preloads}`,
-        );
-      }
+      // No font preload injection — we ship zero web fonts. System fonts
+      // (Avenir Next on Apple, Segoe UI on Windows, Cantarell on Linux)
+      // are already in memory, so nothing on the LCP path needs the
+      // network.
       writeFileSync(path.join(distDir, 'index.html'), template);
 
       const { docs, wiki, posts } = buildContentTrees(srcRoot);

@@ -172,7 +172,7 @@ export default function ServiceMap2D() {
           background: rgba(20, 20, 20, 0.92);
           border: 1px solid rgba(255, 64, 159, 0.4);
           color: #fff;
-          font: 500 11px/1.2 'Inter', system-ui, sans-serif;
+          font: 500 11px/1.2 system-ui, -apple-system, sans-serif;
           letter-spacing: 0.01em;
           white-space: nowrap;
           mix-blend-mode: normal;
@@ -239,11 +239,11 @@ export default function ServiceMap2D() {
           display: flex; align-items: baseline; gap: 6px;
         }
         .service-map .node-card .traffic .num {
-          font: 500 17px/1 'Inter', system-ui, sans-serif;
+          font: 500 17px/1 system-ui, -apple-system, sans-serif;
           color: #fff; letter-spacing: -0.01em;
         }
         .service-map .node-card .traffic .unit {
-          font: 400 11px/1 'Inter', system-ui, sans-serif;
+          font: 400 11px/1 system-ui, -apple-system, sans-serif;
           color: rgba(255,255,255,0.55);
         }
         .service-map .node-card .traffic .bar {
@@ -258,7 +258,7 @@ export default function ServiceMap2D() {
         }
         .service-map .node-card .traffic .share {
           margin-top: 4px;
-          font: 400 10px/1.2 'Inter', system-ui, sans-serif;
+          font: 400 10px/1.2 system-ui, -apple-system, sans-serif;
           color: rgba(255,255,255,0.55);
           letter-spacing: 0.04em;
         }

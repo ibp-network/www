@@ -311,7 +311,7 @@ export default function Globe(props: {
         .pointResolution(4)
         .pointLabel(
           (d: any) =>
-            `<div style="background:rgba(20,20,20,0.85);color:#fff;padding:6px 10px;border-radius:6px;font:500 12px/1.3 'Inter',sans-serif;border:1px solid rgba(255,64,159,0.4)">` +
+            `<div style="background:rgba(20,20,20,0.85);color:#fff;padding:6px 10px;border-radius:6px;font:500 12px/1.3 system-ui, -apple-system, sans-serif;border:1px solid rgba(255,64,159,0.4)">` +
             `<div style="text-transform:uppercase;letter-spacing:0.14em;font-size:10px;color:#bdbdbd">Country traffic · 30 d</div>` +
             `<div style="margin-top:3px"><b>${(d as CountryPoint).name}</b> · ${(d as CountryPoint).requests.toLocaleString()} reqs</div>` +
             `</div>`,
@@ -453,7 +453,7 @@ export default function Globe(props: {
              cleanly. Dark-on-transparent and light-on-transparent both work. */
           background: rgba(255,255,255,0.96);
           color: #1a1a1a;
-          font: 700 11px/1 'Inter', system-ui, sans-serif;
+          font: 700 11px/1 system-ui, -apple-system, sans-serif;
           border: 1.5px solid rgba(255,255,255,0.6);
           border-radius: 50%;
           overflow: hidden;
@@ -503,19 +503,19 @@ export default function Globe(props: {
           transform: translate(20px, -50%);
         }
         .ibp-card-region {
-          font: 500 11px/1 'Inter', system-ui, sans-serif;
+          font: 500 11px/1 system-ui, -apple-system, sans-serif;
           color: #bdbdbd;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           margin-bottom: 6px;
         }
         .ibp-card-name {
-          font: 500 16px/1.2 'Avenir Next', 'Inter', system-ui, sans-serif;
+          font: 500 16px/1.2 'Avenir Next', system-ui, -apple-system, sans-serif;
           color: #fff;
           margin-bottom: 4px;
         }
         .ibp-card-loc {
-          font: 400 12px/1.3 'Inter', system-ui, sans-serif;
+          font: 400 12px/1.3 system-ui, -apple-system, sans-serif;
           color: rgba(255,255,255,0.6);
         }
         .ibp-card-traffic {
@@ -526,11 +526,11 @@ export default function Globe(props: {
           display: flex; align-items: baseline; gap: 6px;
         }
         .ibp-card-traffic-num {
-          font: 500 17px/1 'Inter', system-ui, sans-serif;
+          font: 500 17px/1 system-ui, -apple-system, sans-serif;
           color: #fff; letter-spacing: -0.01em;
         }
         .ibp-card-traffic-unit {
-          font: 400 11px/1 'Inter', system-ui, sans-serif;
+          font: 400 11px/1 system-ui, -apple-system, sans-serif;
           color: rgba(255,255,255,0.55);
         }
         .ibp-card-traffic-bar {
@@ -546,7 +546,7 @@ export default function Globe(props: {
         }
         .ibp-card-traffic-share {
           margin-top: 4px;
-          font: 400 10px/1.2 'Inter', system-ui, sans-serif;
+          font: 400 10px/1.2 system-ui, -apple-system, sans-serif;
           color: rgba(255,255,255,0.55);
           letter-spacing: 0.04em;
         }

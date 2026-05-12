@@ -71,8 +71,13 @@ export default defineConfig({
       },
     },
     fontFamily: {
-      sans: ['"Avenir Next"', 'Avenir', 'Inter', '-apple-system', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
-      display: ['"Avenir Next"', 'Avenir', 'Inter', 'sans-serif'],
+      // System-font stack only. macOS / iOS get Avenir Next (the Figma
+      // typeface, native there); Windows gets Segoe UI Variable; Linux
+      // gets Cantarell / Ubuntu / DejaVu via system-ui. We dropped Inter
+      // (the previous web-font fallback) to take the LCP critical path
+      // off the network entirely — see comment block in src/index.css.
+      sans: ['"Avenir Next"', 'Avenir', 'system-ui', '-apple-system', '"Segoe UI"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+      display: ['"Avenir Next"', 'Avenir', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
       mono: ['"JetBrains Mono"', '"Berkeley Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
     },
   },

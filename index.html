@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
 
-    <!-- LCP critical resources, positioned in the first ~300 bytes of head
-         so the browser's preload scanner discovers them before parsing the
-         JSON-LD blocks further down. Font preloads (weights 300 + 400) are
-         injected by prerenderPlugin at build time; the hero background is
-         the WebP behind the headline. -->
+    <!-- LCP critical resource: the hero background WebP. Sits in the
+         first ~300 bytes of head so the preload scanner picks it up
+         before any JSON-LD or meta. No font preloads — the site uses
+         system fonts only, nothing to fetch. -->
     <link rel="preload" as="image" href="/figma-hero-bg.webp" type="image/webp" fetchpriority="high" />
 
     <title>IBP: Public RPC endpoints for Polkadot, Kusama & Asset Hub</title>

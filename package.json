@@ -22,7 +22,6 @@
     "vite-plugin-solid": "^2.11.10"
   },
   "dependencies": {
-    "@fontsource/inter": "^5.2.8",
     "@solidjs/router": "^0.16.1",
     "front-matter": "^4.0.2",
     "globe.gl": "^2.45.3",
