@@ -50,8 +50,6 @@ function BootnodeDetails(props: { list: Bootnode[]; chainSpecUrl?: string; chain
 
   const upCount = () =>
     Object.values(status()).filter((s) => s === 'up').length;
-  const downCount = () =>
-    Object.values(status()).filter((s) => s === 'down').length;
   const pendingCount = () =>
     Object.values(status()).filter((s) => s === 'pending').length;
 
