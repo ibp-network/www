@@ -2,12 +2,21 @@ import { createResource, For, Show, Suspense } from 'solid-js';
 import { A } from '@solidjs/router';
 import { loadPosts } from '@/utils/markdown';
 import { useDocMeta } from '@/utils/title';
+import { members } from '@/data/members';
 
 /** "2026-05-12" → "May 12, 2026". Falls back to the raw string on parse failure. */
 function formatDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+/** Match a markdown frontmatter `author:` string to a known member and
+ * return its website URL, if any. Lets the byline link out to the
+ * operator who wrote the post. */
+function authorUrl(name: string | undefined): string | undefined {
+  if (!name) return undefined;
+  return members.find((m) => m.name === name)?.website;
 }
 
 export default function BlogPage() {
@@ -46,7 +55,20 @@ export default function BlogPage() {
                       <p class="mt-2 text-sm text-paper-muted">{p.description}</p>
                     </Show>
                     <Show when={p.author}>
-                      <p class="mt-4 text-xs text-paper-dim">by {p.author}</p>
+                      <p class="mt-4 text-xs text-paper-dim">
+                        by{' '}
+                        <Show when={authorUrl(p.author)} fallback={p.author}>
+                          <a
+                            href={authorUrl(p.author)}
+                            target="_blank"
+                            rel="noreferrer"
+                            class="text-cyan hover:text-magenta transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {p.author}
+                          </a>
+                        </Show>
+                      </p>
                     </Show>
                   </A>
                 )}

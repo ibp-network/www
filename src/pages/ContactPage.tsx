@@ -41,7 +41,7 @@ export default function ContactPage() {
   return (
     <section class="section">
       <div class="container-page">
-        <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
           <p class="eyebrow mb-4">Public chat room</p>
           <h1 class="h-display text-4xl md:text-6xl">
             Talk to the <span class="cosmic-text">operators</span>.
@@ -59,7 +59,7 @@ export default function ContactPage() {
         </div>
 
         {/* Room handle — big, copyable, prominent. */}
-        <div class="max-w-2xl mx-auto mt-12">
+        <div class="max-w-2xl mx-auto mt-10 sm:mt-12">
           <div class="text-center mb-3 text-xs uppercase tracking-[0.2em] text-paper-dim">
             Or join from your own client · Room ID
           </div>
@@ -71,7 +71,7 @@ export default function ContactPage() {
         </div>
 
         {/* Join paths */}
-        <div class="mt-14 grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+        <div class="mt-10 sm:mt-14 grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {clients.map((c) => (
             <a
               href={c.href}
@@ -91,9 +91,9 @@ export default function ContactPage() {
         </div>
 
         {/* Room norms — short, practical */}
-        <div class="mt-20 max-w-3xl mx-auto card border-white/6">
+        <div class="mt-12 sm:mt-20 max-w-3xl mx-auto card border-white/6">
           <h2 class="font-display text-2xl font-light mb-5">What to expect</h2>
-          <ul class="space-y-3 text-sm text-paper-muted leading-relaxed">
+          <ul class="space-y-4 sm:space-y-3 text-sm text-paper-muted leading-relaxed">
             <li class="flex gap-3">
               <span class="i-mdi-account-group text-cyan shrink-0 mt-0.5" />
               <span>
@@ -130,7 +130,7 @@ export default function ContactPage() {
         </div>
 
         {/* Alternate channels */}
-        <div class="mt-14 max-w-3xl mx-auto text-center text-sm text-paper-dim">
+        <div class="mt-10 sm:mt-14 max-w-3xl mx-auto text-center text-sm text-paper-dim">
           Not on Matrix?{' '}
           <a href={site.links.twitter} target="_blank" rel="noreferrer" class="text-cyan underline">
             X / Twitter

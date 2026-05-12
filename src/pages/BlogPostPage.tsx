@@ -2,12 +2,20 @@ import { createResource, Show, Suspense } from 'solid-js';
 import { A, useParams } from '@solidjs/router';
 import { loadPost } from '@/utils/markdown';
 import { useDocMeta } from '@/utils/title';
+import { members } from '@/data/members';
 
 /** "2026-05-12" → "May 12, 2026". Falls back to the raw string on parse failure. */
 function formatDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+/** Match a markdown frontmatter `author:` string to a known member and
+ * return its website URL, if any. */
+function authorUrl(name: string | undefined): string | undefined {
+  if (!name) return undefined;
+  return members.find((m) => m.name === name)?.website;
 }
 
 export default function BlogPostPage() {
@@ -51,7 +59,19 @@ export default function BlogPostPage() {
                   </Show>
                   <h1 class="mt-2 h-display text-4xl md:text-5xl">{p().title}</h1>
                   <Show when={p().author}>
-                    <p class="mt-4 text-sm text-paper-dim">by {p().author}</p>
+                    <p class="mt-4 text-sm text-paper-dim">
+                      by{' '}
+                      <Show when={authorUrl(p().author)} fallback={p().author}>
+                        <a
+                          href={authorUrl(p().author)}
+                          target="_blank"
+                          rel="noreferrer"
+                          class="text-cyan hover:text-magenta transition-colors"
+                        >
+                          {p().author}
+                        </a>
+                      </Show>
+                    </p>
                   </Show>
                 </header>
                 <div class="mt-10 prose-ibp" innerHTML={p().html} />
