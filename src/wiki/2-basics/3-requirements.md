@@ -38,11 +38,18 @@ Every active IBP member meets the spec on this page. It is the operating contrac
 
 All software in the production path is open source. No licence lock-in.
 
-## Availability target
+## SLA
 
-**99.9% per site**: about 43 minutes of unplanned downtime per month per member (≈ 8.76 hours per year). Hardware fails, ISPs reroute, datacentres do maintenance; the per-member target leaves honest room for it.
+The base SLA that applies to every rank:
 
-What matters publicly is the **aggregate**, not the per-member number. The seven-member GeoDNS rotation absorbs single-operator outages: if one member goes hard-down, requests route to the next-nearest healthy operator within a single DNS TTL, and the user-visible failure window is short. Aggregate observed availability across the rotation is consequently substantially higher than any one member's individual figure.
+| Metric | Target |
+| --- | --- |
+| Hardware | Hosted in colocation on owned hardware with NVMe (Gen 4.0 or newer) disks |
+| Per-colocation uptime | **99%** |
+| Global service uptime | **99.99%** |
+| Polling cadence | every 5 minutes |
+
+The two uptime numbers measure different things and should not be confused. **Per-colocation** is the per-member target — about 7 hours of unplanned downtime per month per site is tolerated, because hardware fails, ISPs reroute, and datacentres do maintenance. **Global service** is what users actually see: the seven-member GeoDNS rotation absorbs single-operator outages by routing to the next-nearest healthy member within one DNS TTL, so the aggregate observed availability across the federation lands at four nines (≈ 4.4 minutes of user-visible downtime per month). Polling is curator-side: every multiaddr and RPC endpoint is checked on a 5-minute cadence, results feed [ibdash](https://ibdash.dotters.network).
 
 ## Services every member runs
 
