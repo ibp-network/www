@@ -131,7 +131,7 @@ gh secret set <TARGET>_USER --repo ibp-network/www.ibp.network --body "<user>"
 gh secret set <TARGET>_KEY  --repo ibp-network/www.ibp.network < /tmp/ibp_deploy
 ```
 
-Host requirements: podman, port `127.0.0.1:44446` free, upstream HAProxy (or equivalent) routing the public hostname to that loopback.
+Host requirements: podman or docker (the deploy script detects either), port `127.0.0.1:44446` free, upstream HAProxy (or equivalent) routing the public hostname to that loopback.
 
 ### Manual deploy
 
@@ -140,9 +140,10 @@ Host requirements: podman, port `127.0.0.1:44446` free, upstream HAProxy (or equ
 podman save -o /tmp/ibp.tar localhost/ibp-rotko-net:latest
 scp -i /tmp/ibp_deploy /tmp/ibp.tar <user>@<host>:/tmp/
 ssh -i /tmp/ibp_deploy <user>@<host> '
-  podman load -i /tmp/ibp.tar &&
-  podman stop ibp-rotko-net 2>/dev/null; podman rm ibp-rotko-net 2>/dev/null;
-  podman run -d --restart=always -p 127.0.0.1:44446:80 --name ibp-rotko-net localhost/ibp-rotko-net:latest &&
+  RT=$(command -v podman || command -v docker)
+  $RT load -i /tmp/ibp.tar
+  $RT stop ibp-rotko-net 2>/dev/null; $RT rm ibp-rotko-net 2>/dev/null
+  $RT run -d --restart=always -p 127.0.0.1:44446:80 --name ibp-rotko-net localhost/ibp-rotko-net:latest
   rm /tmp/ibp.tar
 '
 ```
