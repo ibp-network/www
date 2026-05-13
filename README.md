@@ -1,4 +1,4 @@
-# ibp-site
+# ibp-www
 
 Public site for the Infrastructure Builders' Programme.
 Served at `ibp.rotko.net`, `ibp.network`, `dotters.network`.
@@ -131,7 +131,7 @@ Three per target:
 Generating a key for a new target:
 
 ```
-ssh-keygen -t ed25519 -f /tmp/ibp_deploy -C 'ibp-site github-actions deploy' -N ''
+ssh-keygen -t ed25519 -f /tmp/ibp_deploy -C 'ibp-www github-actions deploy' -N ''
 cat /tmp/ibp_deploy.pub | ssh <user>@<host> 'cat >> ~/.ssh/authorized_keys'
 
 gh secret set <TARGET>_HOST --repo ibp-network/www --body "<host>"

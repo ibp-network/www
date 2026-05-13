@@ -167,7 +167,7 @@ function sitemapPlugin(): Plugin {
     return base.replace(/^\d{4}-\d{2}-\d{2}-/, '');
   };
   return {
-    name: 'ibp-sitemap',
+    name: 'ibp-www-sitemap',
     apply: 'build',
     closeBundle() {
       const root = path.resolve(__dirname, 'src');
