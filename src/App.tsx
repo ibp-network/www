@@ -20,6 +20,10 @@ const MembersPage = lazy(() => import('@/pages/MembersPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const BlogPage = lazy(() => import('@/pages/BlogPage'));
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'));
+// Unlisted operator-only submission form. Deliberately not in nav,
+// sitemap, llms.txt, or any cross-link — only operators with the URL
+// reach it. See src/pages/SubmitBootnodePage.tsx for the rationale.
+const SubmitBootnodePage = lazy(() => import('@/pages/SubmitBootnodePage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 const Layout: Component<{ children?: JSX.Element }> = (props) => (
@@ -47,6 +51,7 @@ const App: Component = () => (
     <Route path="contact" component={ContactPage} />
     <Route path="blog" component={BlogPage} />
     <Route path="blog/:slug" component={BlogPostPage} />
+    <Route path="operators/submit-bootnode" component={SubmitBootnodePage} />
     <Route path="*" component={NotFoundPage} />
   </Route>
 );
