@@ -318,9 +318,14 @@ timeout 5 bash -c "</dev/tcp/$HOST/$PORT" \\
                       :
                     </p>
                     <pre class="mt-2 font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`git clone https://github.com/rotkonetworks/bootyspector && cd bootyspector
-echo '{"polkadot":{"members":{"you":["/dns/<host>/tcp/<port>/wss/p2p/<peerid>"]}}}' > /tmp/me.json
-cargo run --release -- --bootnodes-config /tmp/me.json \\
-  --max-concurrent 1 --min-peers 2 --timeout 15`}</pre>
+cargo run --release -- \\
+  '/dns/<host>/tcp/<port>/wss/p2p/<peerid>' \\
+  --timeout 15 --min-peers 2`}</pre>
+                    <p class="mt-2 text-[11px]">
+                      Exit code 0 = pass, 1 = fail. JSON result on stdout.
+                      Chain id auto-inferred from hostname (polkadot / kusama /
+                      paseo); override with <code class="font-mono text-paper">--chain</code> if guess is wrong.
+                    </p>
                   </div>
                 </div>
               </details>
