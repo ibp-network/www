@@ -31,7 +31,7 @@ The short timeline of how the IBP became what it is today. For per-cycle audit d
 
 **Early 2026.** Internal review of the next funding cycle starts. By the time the proposal is drafted, the curators and Parity reviewers agree the bounty should fund only chains the treasury has a public-good case for carrying. Chains with a healthy commercial RPC market exit the bounty rotation. Members whose service was tied to those chains exit alongside, or transition to direct-from-parachain funding (Hydration is the first).
 
-**May 2026.** [Subsquare #443](https://polkadot.subsquare.io/posts/443) opens the discussion phase of the next top-up. It has not yet been submitted as a referendum. Headline changes proposed:
+**February 2026.** [Subsquare #443](https://polkadot.subsquare.io/posts/443) opens the discussion phase of the next top-up. It has not yet been submitted as a referendum, and the proposal has gone through several rounds of Parity / W3F feedback since. Headline changes proposed:
 
 - Forward spend drops to ~$1.42M / year (≈ 58.68% reduction vs. the prior cycle).
 - Six external parachains exit the bounty-funded rotation: Acala, Ajuna, Bifrost Polkadot, Nexus, Moonbeam, Unique.
