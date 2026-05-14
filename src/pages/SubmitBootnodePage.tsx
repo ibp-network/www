@@ -19,6 +19,7 @@
 import { createMemo, createSignal, For, Show, Suspense, onMount, onCleanup } from 'solid-js';
 import { useNetworkSnapshot, type Bootnode } from '@/data/network';
 import { useDocMeta } from '@/utils/title';
+import { probeBootnode, type ProbeStatus } from '@/utils/bootnode-probe';
 
 // Belt-and-braces: not in sitemap, not pre-rendered, but a crawler that
 // guesses the URL still gets a noindex/nofollow on the response.
@@ -78,6 +79,14 @@ export default function SubmitBootnodePage() {
   const [selectedMember, setSelectedMember] = createSignal<string>('');
   // map "chain|transport" -> typed multiaddr string
   const [entries, setEntries] = createSignal<Record<string, string>>({});
+  // Live WSS probe state per "chain|transport" cell. 'pending' shows
+  // while we wait for the WebSocket upgrade; 'up' / 'down' once the
+  // probe settles. probe is debounced so we don't fire mid-typing.
+  type ProbeRow = { status: ProbeStatus; reason?: string };
+  const [probes, setProbes] = createSignal<Record<string, ProbeRow>>({});
+  // debounce timers per cell key
+  const probeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  onCleanup(() => probeTimers.forEach((t) => clearTimeout(t)));
 
   const memberNames = createMemo(() => {
     const s = snapshot();
@@ -157,7 +166,38 @@ export default function SubmitBootnodePage() {
   });
 
   const setEntry = (chain: string, transport: Transport, value: string) => {
-    setEntries({ ...entries(), [`${chain}|${transport}`]: value });
+    const key = `${chain}|${transport}`;
+    setEntries({ ...entries(), [key]: value });
+
+    // Clear stale probe state for this cell while the user edits.
+    setProbes((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+
+    // Live WSS probe: only meaningful for /wss multiaddrs (browsers can't
+    // open raw /tcp libp2p connections). Debounce 600 ms so we don't fire
+    // mid-typing. Reuses the same WebSocket-101 probe util the
+    // /endpoints page uses for the per-bootnode "reachable" dots.
+    if (transport !== 'wss') return;
+    if (probeTimers.has(key)) clearTimeout(probeTimers.get(key)!);
+    const trimmed = value.trim();
+    if (!trimmed || validateMultiaddr(trimmed, 'wss') !== null) return;
+
+    setProbes((prev) => ({ ...prev, [key]: { status: 'pending' } }));
+    const timer = setTimeout(async () => {
+      const status = await probeBootnode(trimmed);
+      // only commit if the user hasn't typed something else in the meantime
+      if ((entries()[key] ?? '').trim() !== trimmed) return;
+      setProbes((prev) => ({
+        ...prev,
+        [key]: status === 'up'
+          ? { status }
+          : { status, reason: 'WebSocket upgrade failed — host unreachable, cert invalid, or libp2p not listening on /wss' },
+      }));
+    }, 600);
+    probeTimers.set(key, timer);
   };
 
   return (
@@ -206,6 +246,69 @@ export default function SubmitBootnodePage() {
                 transports for <strong class="text-paper">{selectedMember()}</strong>.
               </p>
 
+              <details class="mt-4 card border-white/6">
+                <summary class="cursor-pointer list-none flex items-center justify-between text-sm">
+                  <span class="text-paper">Test your bootnodes locally first</span>
+                  <span class="i-mdi-chevron-down text-paper-dim transition-transform group-open:rotate-180" />
+                </summary>
+                <div class="mt-4 text-xs text-paper-muted leading-relaxed space-y-3">
+                  <p>
+                    The /wss inputs below probe live from your browser (WS-101
+                    upgrade), so you see a ✓/✗ as you type. /tcp endpoints can't
+                    be probed from a browser; verify them yourself with one of
+                    these:
+                  </p>
+                  <div>
+                    <div class="text-[10px] uppercase tracking-wider text-paper-dim mb-1">
+                      Quick reachability — bash (TCP and WSS)
+                    </div>
+                    <pre class="font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`addr='/dns/<host>/tcp/<port>/p2p/<peerid>'   # paste your multiaddr
+HOST=$(sed -nE 's|^/dns[46]?/([^/]+)/.*|\\1|p' <<<"$addr")
+PORT=$(sed -nE 's|.*/tcp/([0-9]+).*|\\1|p' <<<"$addr")
+timeout 5 bash -c "</dev/tcp/$HOST/$PORT" && echo "✓ $HOST:$PORT TCP reachable" || echo "✗ $HOST:$PORT TCP unreachable"`}</pre>
+                  </div>
+                  <div>
+                    <div class="text-[10px] uppercase tracking-wider text-paper-dim mb-1">
+                      Quick reachability — python (TCP and WSS-101)
+                    </div>
+                    <pre class="font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`python3 - <<'PY'
+import re, socket, ssl, sys
+addr = '/dns/<host>/tcp/<port>/p2p/<peerid>'    # or /tcp/<port>/wss/p2p/...
+host = re.search(r'^/dns[46]?/([^/]+)', addr).group(1)
+port = int(re.search(r'/tcp/(\\d+)', addr).group(1))
+is_wss = '/wss' in addr
+try:
+    s = socket.create_connection((host, port), timeout=5)
+    if is_wss:
+        ctx = ssl.create_default_context()
+        s = ctx.wrap_socket(s, server_hostname=host)
+        s.sendall(f"GET / HTTP/1.1\\r\\nHost: {host}\\r\\nUpgrade: websocket\\r\\nConnection: Upgrade\\r\\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\\r\\nSec-WebSocket-Version: 13\\r\\n\\r\\n".encode())
+        print('✓' if b'101' in s.recv(4096).split(b'\\r\\n', 1)[0] else '✗', host, port, 'WSS-101')
+    else:
+        print('✓', host, port, 'TCP reachable')
+    s.close()
+except Exception as e:
+    print('✗', host, port, type(e).__name__, e)
+PY`}</pre>
+                  </div>
+                  <p>
+                    For real libp2p verification (Noise handshake + Kademlia
+                    FIND_NODE — the actual bootnode job, not just port-open),
+                    use{' '}
+                    <a
+                      href="https://github.com/rotkonetworks/bootyspector"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="text-cyan hover:text-magenta"
+                    >
+                      bootyspector
+                    </a>
+                    : <code class="font-mono text-paper text-[11px]">cargo run --release -- --bootnodes-config /tmp/your-test.json --max-concurrent 1 --min-peers 2 --timeout 15</code>
+                    .
+                  </p>
+                </div>
+              </details>
+
               <div class="mt-4 flex flex-col gap-4">
                 <For each={gaps()}>
                   {(row) => (
@@ -220,7 +323,7 @@ export default function SubmitBootnodePage() {
                       </div>
 
                       <Show when={row.needsTcp}>
-                        <div class="mb-2">
+                        <div class="mb-3">
                           <label class="block text-[11px] uppercase tracking-wider text-paper-dim mb-1">
                             /tcp multiaddr
                           </label>
@@ -230,13 +333,42 @@ export default function SubmitBootnodePage() {
                             class="w-full bg-ink-800 border border-ink-600 rounded px-3 py-2 font-mono text-xs text-paper"
                             onInput={(e) => setEntry(row.chain, 'tcp', e.currentTarget.value)}
                           />
+                          <p class="mt-1 text-[10px] text-paper-dim leading-relaxed">
+                            Browsers can't probe /tcp libp2p endpoints. Verify locally with{' '}
+                            <a
+                              href="https://github.com/rotkonetworks/bootyspector"
+                              target="_blank"
+                              rel="noreferrer"
+                              class="text-cyan hover:text-magenta"
+                            >
+                              bootyspector
+                            </a>
+                            {' '}(real Kademlia + Noise) or the one-liners under the wss field.
+                          </p>
                         </div>
                       </Show>
 
                       <Show when={row.needsWss}>
                         <div>
-                          <label class="block text-[11px] uppercase tracking-wider text-paper-dim mb-1">
-                            /wss multiaddr (browser-reachable)
+                          <label class="block text-[11px] uppercase tracking-wider text-paper-dim mb-1 flex items-center gap-2">
+                            <span>/wss multiaddr (browser-reachable)</span>
+                            <Show when={probes()[`${row.chain}|wss`]}>
+                              {(p) => (
+                                <span
+                                  classList={{
+                                    'inline-flex items-center gap-1 text-[10px] normal-case tracking-normal px-1.5 py-0.5 rounded': true,
+                                    'bg-paper-dim/20 text-paper-dim': p().status === 'pending',
+                                    'bg-cyan/15 text-cyan':           p().status === 'up',
+                                    'bg-magenta/15 text-magenta':     p().status === 'down',
+                                  }}
+                                  title={p().reason}
+                                >
+                                  <Show when={p().status === 'pending'}>● probing…</Show>
+                                  <Show when={p().status === 'up'}>✓ reachable</Show>
+                                  <Show when={p().status === 'down'}>✗ unreachable</Show>
+                                </span>
+                              )}
+                            </Show>
                           </label>
                           <input
                             type="text"
@@ -244,6 +376,11 @@ export default function SubmitBootnodePage() {
                             class="w-full bg-ink-800 border border-ink-600 rounded px-3 py-2 font-mono text-xs text-paper"
                             onInput={(e) => setEntry(row.chain, 'wss', e.currentTarget.value)}
                           />
+                          <Show when={probes()[`${row.chain}|wss`]?.status === 'down'}>
+                            <p class="mt-1 text-[10px] text-magenta/80 leading-relaxed">
+                              {probes()[`${row.chain}|wss`]?.reason}
+                            </p>
+                          </Show>
                         </div>
                       </Show>
                     </div>
