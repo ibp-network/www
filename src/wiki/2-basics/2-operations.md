@@ -41,6 +41,17 @@ Seven active operators as of May 2026:
 
 Full operator handles and Matrix contacts on the [Members page](/operations/auditors/members).
 
+## DNS infrastructure
+
+The two GeoDNS pools take different approaches to their authoritative DNS, and that's deliberate — keeping the routing layer itself unconcentrated is part of the design.
+
+| Pool | Authoritative NS | Operator |
+| --- | --- | --- |
+| `ibp.network` | `gns21-24.cloudns.net` | Gatotech, via [ClouDNS](https://www.cloudns.net/) (commercial GeoDNS-as-a-service) |
+| `dotters.network` | `dns-01..05.dotters.network` | Stake Plus, in-house — five member-operated authoritative nameservers, no third-party DNS dependency |
+
+A client resolving `asset-hub-polkadot.dotters.network` hits one of five Stake-Plus-operated authoritative servers directly; resolving the `ibp.network` equivalent goes through ClouDNS's anycast network. Same chain, same WSS endpoints behind the names — but the path that *gets you to the IP* is genuinely independent in each pool. If ClouDNS has an incident or changes its policy, `dotters.network` is unaffected; if the Dotters cluster has a maintenance window, `ibp.network` is unaffected.
+
 ## Reporting
 
 Members meet on a regular cadence; recordings are published to the [IBP YouTube channel](https://www.youtube.com/@ibp.network). Treasury reporting is handled via the bounty curators.

@@ -27,7 +27,7 @@ A bootnode is a peer that a Substrate node contacts when it first joins the netw
 Two things to know:
 
 - **Bootnodes are entry points, not trust anchors.** They don't sign blocks, don't decide what's finalised, don't serve historical state. A misbehaving bootnode can introduce a node to a bad peer set, but the finality proofs that follow either match the genesis hash + GRANDPA validator set or they don't; the bootnode can't lie its way past that.
-- **Why WSS bootnodes specifically.** Browsers can't open raw TCP sockets, so an in-browser smoldot light client needs `wss://`-flavoured bootnodes. The IBP runs a WSS variant of every bootnode in addition to the TCP one, which is what makes in-browser light clients work without a hosted RPC in the path.
+- **Why WSS bootnodes specifically.** Browsers can't open raw TCP sockets, so an in-browser smoldot light client needs `wss://`-flavoured bootnodes. In practice the overwhelming majority of light-client usage is browser-based (wallets like Talisman and Nova, dApp frontends, governance UIs), so the WSS variant isn't an afterthought — it's the path most light clients actually use. The IBP runs a WSS variant of every bootnode in addition to the TCP one, which is what makes in-browser light clients work without a hosted RPC in the path.
 
 The full bootnode list (TCP + WSS per chain) is at [/endpoints](/endpoints), under the **Trustless access** disclosure on each chain card.
 
@@ -40,7 +40,7 @@ The endpoint isn't the only path to chain state. Polkadot is one of the few netw
 - **Public RPC for the cold start.** First call is one round-trip; the page renders. We host the bootnodes that smoldot uses to find peers, so this path is also what gets the light client onto the network.
 - **Light client for ongoing reads.** Once smoldot has synced (a few seconds in the background), the dApp switches its reads to the in-browser client. From that point forward chain state is verified locally; the RPC layer is no longer in the trust path, and a compromised endpoint can't lie to the user.
 
-We run the infrastructure for both halves of that hybrid: the public RPC that bootstraps fast, and the bootnodes and chain-spec hosting that make the smoldot handoff possible.
+We run the infrastructure for both halves of that hybrid: the public RPC that bootstraps fast, and the bootnodes and chain-spec hosting that make the smoldot handoff possible. The point is to lower the barrier to building on Polkadot — teams shouldn't have to stand up their own RPC fleet or negotiate with a commercial provider to ship a dApp. Treasury-funded, member-operated infrastructure is the cheapest, most honest place that work can live.
 
 ## What every member runs
 
