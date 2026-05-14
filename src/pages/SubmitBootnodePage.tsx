@@ -251,39 +251,35 @@ export default function SubmitBootnodePage() {
                   <span class="text-paper">Test your bootnodes locally first</span>
                   <span class="i-mdi-chevron-down text-paper-dim transition-transform group-open:rotate-180" />
                 </summary>
-                <div class="mt-4 text-xs text-paper-muted leading-relaxed space-y-3">
+                <div class="mt-4 text-xs text-paper-muted leading-relaxed space-y-4">
                   <p>
-                    The /wss inputs below probe live from your browser (WS-101
-                    upgrade), so you see a ✓/✗ as you type. /tcp endpoints can't
-                    be probed from a browser; verify them yourself with one of
-                    these:
+                    /wss inputs below light up ✓/✗ as you type (browser
+                    WS-101 probe). /tcp can't be browser-probed; pick a
+                    tool below to verify it yourself before submitting.
                   </p>
+
                   <div>
                     <div class="text-[10px] uppercase tracking-wider text-paper-dim mb-1">
-                      Quick reachability — bash (TCP and WSS)
+                      Port-reachable (any transport) — Python, no deps
                     </div>
-                    <pre class="font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`addr='/dns/<host>/tcp/<port>/p2p/<peerid>'   # paste your multiaddr
-HOST=$(sed -nE 's|^/dns[46]?/([^/]+)/.*|\\1|p' <<<"$addr")
-PORT=$(sed -nE 's|.*/tcp/([0-9]+).*|\\1|p' <<<"$addr")
-timeout 5 bash -c "</dev/tcp/$HOST/$PORT" && echo "✓ $HOST:$PORT TCP reachable" || echo "✗ $HOST:$PORT TCP unreachable"`}</pre>
-                  </div>
-                  <div>
-                    <div class="text-[10px] uppercase tracking-wider text-paper-dim mb-1">
-                      Quick reachability — python (TCP and WSS-101)
-                    </div>
+                    <p class="mb-2 text-[11px] text-paper-dim">
+                      Replace the <code class="font-mono text-paper">addr</code>
+                      {' '}line with your multiaddr. Works for both <code class="font-mono text-paper">/tcp/&lt;p&gt;/p2p/…</code>
+                      {' '}and <code class="font-mono text-paper">/tcp/&lt;p&gt;/wss/p2p/…</code>. Confirms port + TLS for WSS, just port for TCP.
+                    </p>
                     <pre class="font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`python3 - <<'PY'
-import re, socket, ssl, sys
-addr = '/dns/<host>/tcp/<port>/p2p/<peerid>'    # or /tcp/<port>/wss/p2p/...
+import re, socket, ssl
+addr = '/dns/<host>/tcp/<port>/p2p/<peerid>'   # paste your multiaddr
 host = re.search(r'^/dns[46]?/([^/]+)', addr).group(1)
 port = int(re.search(r'/tcp/(\\d+)', addr).group(1))
-is_wss = '/wss' in addr
+wss  = '/wss' in addr
 try:
     s = socket.create_connection((host, port), timeout=5)
-    if is_wss:
-        ctx = ssl.create_default_context()
-        s = ctx.wrap_socket(s, server_hostname=host)
+    if wss:
+        s = ssl.create_default_context().wrap_socket(s, server_hostname=host)
         s.sendall(f"GET / HTTP/1.1\\r\\nHost: {host}\\r\\nUpgrade: websocket\\r\\nConnection: Upgrade\\r\\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\\r\\nSec-WebSocket-Version: 13\\r\\n\\r\\n".encode())
-        print('✓' if b'101' in s.recv(4096).split(b'\\r\\n', 1)[0] else '✗', host, port, 'WSS-101')
+        ok = b'101' in s.recv(4096).split(b'\\r\\n', 1)[0]
+        print('✓' if ok else '✗', host, port, 'WSS-101')
     else:
         print('✓', host, port, 'TCP reachable')
     s.close()
@@ -291,21 +287,41 @@ except Exception as e:
     print('✗', host, port, type(e).__name__, e)
 PY`}</pre>
                   </div>
-                  <p>
-                    For real libp2p verification (Noise handshake + Kademlia
-                    FIND_NODE — the actual bootnode job, not just port-open),
-                    use{' '}
-                    <a
-                      href="https://github.com/rotkonetworks/bootyspector"
-                      target="_blank"
-                      rel="noreferrer"
-                      class="text-cyan hover:text-magenta"
-                    >
-                      bootyspector
-                    </a>
-                    : <code class="font-mono text-paper text-[11px]">cargo run --release -- --bootnodes-config /tmp/your-test.json --max-concurrent 1 --min-peers 2 --timeout 15</code>
-                    .
-                  </p>
+
+                  <div>
+                    <div class="text-[10px] uppercase tracking-wider text-paper-dim mb-1">
+                      Port-reachable — Bash, TCP only
+                    </div>
+                    <pre class="font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`addr='/dns/<host>/tcp/<port>/p2p/<peerid>'
+HOST=$(sed -nE 's|^/dns[46]?/([^/]+)/.*|\\1|p' <<<"$addr")
+PORT=$(sed -nE 's|.*/tcp/([0-9]+).*|\\1|p' <<<"$addr")
+timeout 5 bash -c "</dev/tcp/$HOST/$PORT" \\
+  && echo "✓ $HOST:$PORT" || echo "✗ $HOST:$PORT"`}</pre>
+                  </div>
+
+                  <div>
+                    <div class="text-[10px] uppercase tracking-wider text-paper-dim mb-1">
+                      Full libp2p (Noise + Kademlia FIND_NODE)
+                    </div>
+                    <p class="text-[11px]">
+                      The above only check port-reachability. For the actual
+                      "does the bootnode answer Kademlia and seed peers"
+                      check, use{' '}
+                      <a
+                        href="https://github.com/rotkonetworks/bootyspector"
+                        target="_blank"
+                        rel="noreferrer"
+                        class="text-cyan hover:text-magenta"
+                      >
+                        bootyspector
+                      </a>
+                      :
+                    </p>
+                    <pre class="mt-2 font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`git clone https://github.com/rotkonetworks/bootyspector && cd bootyspector
+echo '{"polkadot":{"members":{"you":["/dns/<host>/tcp/<port>/wss/p2p/<peerid>"]}}}' > /tmp/me.json
+cargo run --release -- --bootnodes-config /tmp/me.json \\
+  --max-concurrent 1 --min-peers 2 --timeout 15`}</pre>
+                  </div>
                 </div>
               </details>
 
@@ -334,16 +350,8 @@ PY`}</pre>
                             onInput={(e) => setEntry(row.chain, 'tcp', e.currentTarget.value)}
                           />
                           <p class="mt-1 text-[10px] text-paper-dim leading-relaxed">
-                            Browsers can't probe /tcp libp2p endpoints. Verify locally with{' '}
-                            <a
-                              href="https://github.com/rotkonetworks/bootyspector"
-                              target="_blank"
-                              rel="noreferrer"
-                              class="text-cyan hover:text-magenta"
-                            >
-                              bootyspector
-                            </a>
-                            {' '}(real Kademlia + Noise) or the one-liners under the wss field.
+                            Browsers can't probe /tcp. Test locally — see the
+                            <em> "Test your bootnodes locally first"</em> pane above.
                           </p>
                         </div>
                       </Show>
