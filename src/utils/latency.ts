@@ -1,60 +1,79 @@
 /**
- * Browser-side latency probe — fires against each operator's `ServiceIPv4`
- * from the canonical config (members_professional.json) rather than their
- * monitor hostnames. The previous version probed monitor URLs and several
- * landed on CDN edges (Cloudflare-fronted), so a Bangkok client measured
- * ~8 ms to Amforc/Zurich because it was actually hitting CF Singapore.
+ * Browser-side latency probe against operator ServiceIPv4 (from the
+ * canonical config). Probing the IP directly bypasses CDNs that
+ * front member hostnames; the TLS handshake fails because the cert
+ * is bound to a hostname, but we don't need the response, only the
+ * RTT to error.
  *
- * IP-direct probing avoids the CDN entirely. The TLS handshake to
- * `https://<ipv4>/` will fail because the operator's TLS cert is bound to a
- * hostname, not the raw IP. That's fine — we don't need the response. The
- * browser's `onerror` fires after the TCP+TLS roundtrip completes, which is
- * the real RTT to the operator's box.
+ * Notes on the design:
  *
- * Caveats this carries:
- *   - First probe pays TCP SYN + TLS 1.3 handshake (~2 one-way trips
- *     beyond the TCP one) so the raw measurement is roughly 2× the warm-
- *     connection round-trip. We divide by 2 to report the latency the
- *     user will actually see on an established WSS — that's what RPC calls
- *     ride over, not cold connects.
- *   - Mixed-content rules don't apply: both the page and the probe are HTTPS.
- *   - Some browsers/networks may delay or batch requests to many IPs in
- *     parallel; numbers should be read as "approximate, comparable across
- *     operators on the same page load," not as SLA truth. For real telemetry
- *     point users at ibdash.
+ * Samples + min. A single browser timing has lots of noise — parallel
+ * probes head-of-line block, the TLS abort path varies in length per
+ * browser, performance.now() granularity is coarsened on some
+ * platforms. Take SAMPLES probes and report the minimum. Min is the
+ * best estimate of the network floor (= real round-trip + smallest
+ * unavoidable browser overhead). It maps closer to ICMP ping than any
+ * average would.
+ *
+ * No magic divisor. The old code did `/2` to approximate "warm
+ * connection RTT" from a cold TCP+TLS measurement. That divisor is
+ * wrong on TLS 1.2 (2-RTT handshake), wrong on connection reuse, and
+ * empirically too aggressive. The number we report now is the
+ * raw browser-observed RTT (cold connect + TLS abort). It will be
+ * larger than ICMP ping but at least it's honest.
+ *
+ * fetch, not Image. img.onerror has slow, browser-specific cleanup
+ * paths; fetch with no-cors + opaque response fails immediately on
+ * cert verification. Same probe, less garbage on the timer.
  */
 import { createResource, type Resource } from 'solid-js';
 
-const TIMEOUT_MS = 4000;
+const TIMEOUT_MS = 3000;
+const SAMPLES = 3;
 const cache = new Map<string, number>();
 
 export type Probeable = { name: string; ipv4?: string };
 
-/** Probe a single IPv4 over HTTPS. Resolves to ms latency or null on timeout. */
+async function singleProbe(ipv4: string, timeoutMs: number, nonce: string): Promise<number | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const t = performance.now();
+  try {
+    // mode: 'no-cors' avoids the CORS preflight. cache: 'no-store'
+    // prevents the browser from satisfying us with a cached error.
+    // The fetch will reject on TLS verification — we catch it and
+    // measure how long that took.
+    await fetch(`https://${ipv4}/?_=${nonce}`, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+      signal: ctrl.signal,
+      keepalive: false,
+    });
+  } catch {
+    // expected
+  }
+  clearTimeout(timer);
+  const elapsed = performance.now() - t;
+  // If we hit the abort timeout, the measurement is meaningless.
+  return ctrl.signal.aborted ? null : elapsed;
+}
+
+/** Probe a single IPv4 over HTTPS. Returns the MIN of SAMPLES measurements, or null. */
 export function probeIp(ipv4: string, timeoutMs = TIMEOUT_MS): Promise<number | null> {
   if (cache.has(ipv4)) return Promise.resolve(cache.get(ipv4)!);
-
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') return resolve(null);
-    const t0 = performance.now();
-    let done = false;
-    const finish = (ms: number | null) => {
-      if (done) return;
-      done = true;
-      if (ms !== null) cache.set(ipv4, ms);
-      resolve(ms);
-    };
-    const img = new Image();
-    // Divide by 2: the raw measurement is a cold TCP+TLS handshake (~2×
-    // the warm-connection RTT). Users care about the per-call latency over
-    // their established WSS, not the connect cost, so we report that.
-    const elapsed = () => (performance.now() - t0) / 2;
-    img.onload = () => finish(elapsed());
-    img.onerror = () => finish(elapsed());
-    setTimeout(() => finish(null), timeoutMs);
-    // TLS will reject — onerror fires with the real RTT. Cache-bust the URL.
-    img.src = `https://${ipv4}/?_=${Date.now()}`;
-  });
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  return (async () => {
+    const xs: number[] = [];
+    for (let i = 0; i < SAMPLES; i++) {
+      const x = await singleProbe(ipv4, timeoutMs, `${Date.now()}-${i}`);
+      if (x !== null) xs.push(x);
+    }
+    if (xs.length === 0) return null;
+    const min = Math.min(...xs);
+    cache.set(ipv4, min);
+    return min;
+  })();
 }
 
 /**

@@ -137,7 +137,7 @@ export default function HomePage() {
             Quick connect
           </p>
           <CopyableEndpoint
-            url="wss://asset-hub-polkadot.dotters.network"
+            url="wss://asset-hub-polkadot.ibp.network"
             label="Asset Hub Polkadot"
           />
         </div>
