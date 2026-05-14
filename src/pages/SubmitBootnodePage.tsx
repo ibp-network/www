@@ -320,11 +320,20 @@ timeout 5 bash -c "</dev/tcp/$HOST/$PORT" \\
                     <pre class="mt-2 font-mono text-[11px] text-paper bg-ink-900 p-3 rounded overflow-x-auto whitespace-pre">{`git clone https://github.com/rotkonetworks/bootyspector && cd bootyspector
 cargo run --release -- \\
   '/dns/<host>/tcp/<port>/wss/p2p/<peerid>' \\
-  --timeout 15 --min-peers 2`}</pre>
+  --chain <protocolid> --timeout 15 --min-peers 2`}</pre>
                     <p class="mt-2 text-[11px]">
                       Exit code 0 = pass, 1 = fail. JSON result on stdout.
-                      Chain id auto-inferred from hostname (polkadot / kusama /
-                      paseo); override with <code class="font-mono text-paper">--chain</code> if guess is wrong.
+                      <code class="font-mono text-paper">--chain</code> is required and must match the chain's
+                      <code class="font-mono text-paper">protocolId</code> field — e.g.{' '}
+                      <code class="font-mono text-paper">dot</code> /
+                      <code class="font-mono text-paper">ksmcc3</code> /
+                      <code class="font-mono text-paper">paseo</code> for relay,
+                      <code class="font-mono text-paper">asset-hub-polkadot</code> /
+                      <code class="font-mono text-paper">bridge-hub-kusama</code> /
+                      etc. for system parachains.
+                      Look it up with{' '}
+                      <code class="font-mono text-paper">jq -r '.protocolId' &lt;chain&gt;.json</code>.
+                      No guessing — wrong chain id silently fails the same way a broken bootnode would.
                     </p>
                   </div>
                 </div>
