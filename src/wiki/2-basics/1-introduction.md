@@ -5,7 +5,7 @@ title: Introduction
 
 # Introduction
 
-The Infrastructure Builders' Programme (IBP) is a Polkadot/Kusama treasury-funded effort to run public RPC, bootnode, and archive infrastructure for the Polkadot ecosystem. It is operated by **seven independent businesses**, each running their own bare-metal servers in colocation facilities they contract directly.
+The Infrastructure Builders' Programme (IBP) is a Polkadot/Kusama treasury-funded effort to run public RPC, bootnode, and archive infrastructure for the Polkadot ecosystem. It is currently operated by **__IBP_MEMBER_COUNT__ independent businesses** (__IBP_MEMBERS_WITH_COUNTRY__), each running their own bare-metal servers in colocation facilities they contract directly.
 
 Public endpoints aggregate behind two GeoDNS namespaces: `ibp.network` (administered by Gatotech) and `dotters.network` (administered by Stake Plus). The live endpoint inventory is at [/endpoints](/endpoints).
 
@@ -44,7 +44,7 @@ We run the infrastructure for both halves of that hybrid: the public RPC that bo
 
 ## What every member runs
 
-The seven members differ in city, hardware vendor, and ISPs. What they share is the **minimum spec each site must meet**:
+The __IBP_MEMBER_COUNT__ active members differ in city, hardware vendor, and ISPs. What they share is the **minimum spec each site must meet**:
 
 - **Member-owned hardware** in member-contracted colocation. No cloud rentals in the production path.
 - **Current-generation server class**: EPYC or Xeon CPUs, ECC RAM, PCIe 4.0+ NVMe, IPMI-managed BMCs.
@@ -57,7 +57,7 @@ Full requirement detail on [Minimum requirements](/operations/basics/requirement
 
 ## What this section covers
 
-- [Operations](/operations/basics/operations): governance, treasury funding, the curator multisig, current roster.
+- [Operations](/operations/basics/operations): governance, treasury funding, the curator multisig, current membership.
 - [Minimum requirements](/operations/basics/requirements): the spec every member meets.
-- [Members](/operations/auditors/members): the seven active operators, with location and contact handle.
+- [Members](/operations/auditors/members): active operators, with location and contact handle.
 - [Progress](/operations/auditors/progress): programme history and funding cycles.

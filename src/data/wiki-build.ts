@@ -23,6 +23,40 @@ import remarkGfm from 'remark-gfm';
 import remarkHtml from 'remark-html';
 import type { WikiCategory, WikiGroup, WikiPage } from './wiki-types';
 
+/**
+ * Build-time variable substitution. Set by the Vite plugin once
+ * `members_professional.json` has been fetched. parsePage applies the
+ * substitutions before remark renders, so the resulting HTML carries
+ * the live numbers — no "seven members" hardcoded in docs that drifts
+ * when an operator joins or leaves.
+ *
+ * Placeholders (used in .md files):
+ *   __IBP_MEMBER_COUNT__              "7"
+ *   __IBP_MEMBERS_LIST__              "Amforc, Dwellir, Gatotech, …"
+ *   __IBP_MEMBERS_WITH_COUNTRY__      "Amforc (Switzerland), Dwellir (Nigeria), …"
+ *   __IBP_MEMBER_COUNTRIES__          "Switzerland, Nigeria, Costa Rica, …"
+ *   __IBP_MEMBER_COUNTRY_COUNT__      "7"
+ */
+export type IbpVars = {
+  memberCount: number;
+  membersList: string;            // comma-separated names
+  membersWithCountry: string;     // "Amforc (Switzerland), …"
+  memberCountries: string;        // comma-separated unique countries
+  memberCountryCount: number;
+};
+let ibpVars: IbpVars | null = null;
+export function setIbpVars(v: IbpVars): void { ibpVars = v; }
+
+function substituteIbpVars(body: string): string {
+  if (!ibpVars) return body;
+  return body
+    .replace(/__IBP_MEMBER_COUNT__/g,         String(ibpVars.memberCount))
+    .replace(/__IBP_MEMBERS_LIST__/g,         ibpVars.membersList)
+    .replace(/__IBP_MEMBERS_WITH_COUNTRY__/g, ibpVars.membersWithCountry)
+    .replace(/__IBP_MEMBER_COUNTRIES__/g,     ibpVars.memberCountries)
+    .replace(/__IBP_MEMBER_COUNTRY_COUNT__/g, String(ibpVars.memberCountryCount));
+}
+
 type Frontmatter = {
   sidebar_position?: number;
   sidebar_label?: string;
@@ -157,7 +191,8 @@ function parsePage(
   const bodyNoH1 = parsed.body.replace(/^\s*#\s+.+\r?\n+/, '');
   const body0 = preprocessAdmonitions(bodyNoH1);
   const body1 = rewriteLinksAndImages(body0, ctx);
-  const html = String(processor.processSync(body1));
+  const body2 = substituteIbpVars(body1);
+  const html = String(processor.processSync(body2));
   const label = meta.sidebar_label ?? title;
 
   return {

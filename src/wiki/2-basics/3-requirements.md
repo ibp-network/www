@@ -29,7 +29,7 @@ Every active IBP member meets the spec on this page. It is the operating contrac
 
 | Layer | Default |
 | --- | --- |
-| Hypervisor | Proxmox VE (KVM-based), dominant across the roster. VMware and plain libvirt/KVM also acceptable. |
+| Hypervisor | Proxmox VE (KVM-based), dominant across our deployments. VMware and plain libvirt/KVM also acceptable. |
 | Storage | Ceph (block + object), replicated across the cluster. |
 | Guest OS | Ubuntu LTS. Debian, AlmaLinux, NixOS also acceptable. |
 | Reverse proxy + TLS | HAProxy + Let's Encrypt (or operator-owned cert). |
@@ -49,7 +49,7 @@ The base SLA that applies to every rank:
 | Global service uptime | **99.99%** |
 | Polling cadence | every 5 minutes |
 
-The two uptime numbers measure different things and should not be confused. **Per-colocation** is the per-member target — about 7 hours of unplanned downtime per month per site is tolerated, because hardware fails, ISPs reroute, and datacentres do maintenance. **Global service** is what users actually see: the seven-member GeoDNS rotation absorbs single-operator outages by routing to the next-nearest healthy member within one DNS TTL, so the aggregate observed availability across the federation lands at four nines (≈ 4.4 minutes of user-visible downtime per month). Polling is curator-side: every multiaddr and RPC endpoint is checked on a 5-minute cadence, results feed [ibdash](https://ibdash.dotters.network).
+The two uptime numbers measure different things and should not be confused. **Per-colocation** is the per-member target — about 7 hours of unplanned downtime per month per site is tolerated, because hardware fails, ISPs reroute, and datacentres do maintenance. **Global service** is what users actually see: the __IBP_MEMBER_COUNT__-member GeoDNS rotation absorbs single-operator outages by routing to the next-nearest healthy member within one DNS TTL, so the aggregate observed availability across the federation lands at four nines (≈ 4.4 minutes of user-visible downtime per month). Polling is curator-side: every multiaddr and RPC endpoint is checked on a 5-minute cadence, results feed [ibdash](https://ibdash.dotters.network).
 
 ## Services every member runs
 
@@ -68,12 +68,12 @@ The full per-chain assignment matrix is in the canonical config at [ibp-network/
 
 - **No public SSH** on production hosts. Operators connect via VPN or out-of-band BMC only.
 - **Firewalled egress.** RPC ports are the only public-facing service.
-- **Operator-managed TLS certs** with automated renewal. No shared wildcard certificate across the roster.
+- **Operator-managed TLS certs** with automated renewal. No shared wildcard certificate across the membership.
 - **Independent legal entity** per member: operators are individually incorporated businesses, not contractors of a parent.
 
 ## Jurisdictional diversity
 
-The seven operators are incorporated in seven different jurisdictions: Switzerland, Nigeria, Costa Rica, India, Thailand, United States, Portugal. No two members share a colocation provider. No single regulator can take down the public-RPC layer of Polkadot through one of its members.
+The __IBP_MEMBER_COUNT__ active operators are incorporated in __IBP_MEMBER_COUNTRY_COUNT__ different jurisdictions: __IBP_MEMBER_COUNTRIES__. No two members share a colocation provider. No single regulator can take down the public-RPC layer of Polkadot through one of its members.
 
 ## Audit cadence
 

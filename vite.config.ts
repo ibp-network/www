@@ -3,7 +3,7 @@ import solidPlugin from 'vite-plugin-solid';
 import UnocssPlugin from '@unocss/vite';
 import path from 'node:path';
 import { readdirSync, statSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
-import { buildContentTrees } from './src/data/wiki-build';
+import { buildContentTrees, setIbpVars, type IbpVars } from './src/data/wiki-build';
 import type { WikiCategory } from './src/data/wiki-types';
 
 /**
@@ -37,8 +37,51 @@ function wikiContentPlugin(): Plugin {
     cache = buildContentTrees(srcRoot);
     return cache;
   };
+
+  // Fetch live membership from the canonical config repo at build time
+  // and pass it through to wiki-build's substitution layer. Markdown
+  // files use placeholders like __IBP_MEMBER_COUNT__ /
+  // __IBP_MEMBERS_WITH_COUNTRY__ which get replaced with the real
+  // values before remark renders. No more "seven members" hardcoded
+  // in docs that drifts when the membership changes.
+  type RawMember = {
+    Details?: { Name?: string };
+    Service?: { Active?: number };
+    Location?: { Country?: string };
+  };
+  async function loadIbpVars(): Promise<IbpVars> {
+    const url = 'https://raw.githubusercontent.com/ibp-network/config/main/members_professional.json';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`members_professional.json fetch: HTTP ${r.status}`);
+    const raw: Record<string, RawMember> = await r.json();
+    const active = Object.values(raw)
+      .filter((m) => m?.Service?.Active === 1)
+      .map((m) => ({ name: m.Details?.Name ?? '', country: m.Location?.Country ?? '' }))
+      .filter((m) => m.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const uniqCountries = [...new Set(active.map((m) => m.country).filter(Boolean))];
+    return {
+      memberCount:        active.length,
+      membersList:        active.map((m) => m.name).join(', '),
+      membersWithCountry: active.map((m) => m.country ? `${m.name} (${m.country})` : m.name).join(', '),
+      memberCountries:    uniqCountries.join(', '),
+      memberCountryCount: uniqCountries.length,
+    };
+  }
+
   return {
     name: 'ibp-wiki-content',
+    async buildStart() {
+      try {
+        setIbpVars(await loadIbpVars());
+      } catch (e) {
+        // Don't fail the build on a flaky network — log and continue.
+        // Placeholders will remain literal in the output, which is
+        // visually loud enough to notice in a PR review.
+        // eslint-disable-next-line no-console
+        console.warn(`[ibp-wiki-content] failed to load member vars: ${String(e)}`);
+      }
+    },
     resolveId(id) {
       if (id in VIRTS) return '\0' + id;
       return null;
