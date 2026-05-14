@@ -60,4 +60,5 @@ Full requirement detail on [Minimum requirements](/operations/basics/requirement
 - [Operations](/operations/basics/operations): governance, treasury funding, the curator multisig, current membership.
 - [Minimum requirements](/operations/basics/requirements): the spec every member meets.
 - [Members](/operations/auditors/members): active operators, with location and contact handle.
+- [Curators](/operations/auditors/curators): the 3-of-5 multisig that ratifies child-bounty payments, plus links to the public payment history.
 - [Progress](/operations/auditors/progress): programme history and funding cycles.

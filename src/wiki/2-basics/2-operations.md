@@ -20,7 +20,7 @@ Bounty funds flow to members as **child-bounties**, one per member per period. T
 
 ## Governance
 
-- **Curator multisig (3-of-5)** approves child-bounty releases. **The curators are not the operators**; they're appointed via the on-chain bounty mechanism and sit independently of the membership. This separation is the trust-model load-bearing piece: operators can't pay themselves.
+- **Curator multisig (3-of-5)** approves child-bounty releases. **The curators are not the operators**; they're appointed via the on-chain bounty mechanism and sit independently of the membership. This separation is the trust-model load-bearing piece: operators can't pay themselves. Current curators, their affiliations, and how the multisig is structured: [Curators](/operations/auditors/curators).
 - **Members propose, curators ratify.** Operators bring proposals (membership changes, funding cycles, service rotation) to the curators once internal consensus has formed in the members' meeting. The multisig signs releases only after the prior cycle's report passes review.
 - **Curators rotate**; the active set is maintained on-chain via the bounty's curator slot.
 - **No staged tier of membership.** All active members operate at the same service level. Earlier "milestone" progressions used during the 2022-2023 cycle are no longer in use.
