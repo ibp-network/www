@@ -113,7 +113,7 @@ export function TreePage(props: TreePageProps): JSX.Element {
       p?.description ??
       (props.docTitleSuffix === 'Build'
         ? 'Developer documentation for building on Polkadot via IBP public RPC: PAPI, reactive-dot, Dedot, subxt, viem, ethers, smoldot, EVM on Asset Hub.'
-        : 'How the Infrastructure Builders’ Programme is run, audited, and built. Governance, funding, member roster, hardware standards.');
+        : 'How the Infrastructure Builders’ Programme is run, audited, and built. Governance, funding, member list, hardware standards.');
     return { title, description };
   });
 

@@ -17,7 +17,7 @@ Seven active operators as of May 2026. All operate at the same service level (no
 | RadiumBlock | Bengaluru, IN | Asia | Sep 2023 | `@radiumblock:matrix.org` |
 | Rotko Networks | Bangkok, TH | Asia | Oct 2023 | `@hitchhooker:matrix.org` |
 
-The canonical roster (with public ServiceIPv4 / IPv6 addresses, per-chain assignments, and member logos) lives at [`ibp-network/config`](https://github.com/ibp-network/config). The live snapshot is rendered at [/members](/members).
+The canonical operator list (with public ServiceIPv4 / IPv6 addresses, per-chain assignments, and member logos) lives at [`ibp-network/config`](https://github.com/ibp-network/config). The live snapshot is rendered at [/members](/members).
 
 ## Withdrawn
 

@@ -2,7 +2,7 @@
 
 > Free, public RPC endpoints for the Polkadot ecosystem. Member-owned bare-metal hardware, GeoDNS-routed, no API keys, no rate limits.
 
-The IBP is a federation of seven independent operators running RPC, bootnodes, archive nodes, and validators across five continents. Treasury-funded since 2022 (Kusama Ref 35), and from 2024 also by Polkadot. Asset Hub Polkadot is the consumer chain; relay-chain endpoints are for validators and parachain collators.
+The IBP is a federation of seven independent operators running RPC, bootnodes, archive nodes, and validators across four continents (Europe, Africa, Asia, the Americas). Treasury-funded since 2022 (Kusama Ref 35), and from 2024 also by Polkadot. Asset Hub Polkadot is the consumer chain; relay-chain endpoints are for validators and parachain collators. The canonical, always-current operator list lives at https://github.com/ibp-network/config.
 
 Primary endpoint: `wss://asset-hub-polkadot.dotters.network`
 
@@ -36,7 +36,7 @@ Primary endpoint: `wss://asset-hub-polkadot.dotters.network`
 - [Introduction](https://ibp.rotko.net/operations/basics/introduction): programme overview, trust model.
 - [Operations](https://ibp.rotko.net/operations/basics/operations): curator multisig, member federation.
 - [Requirements](https://ibp.rotko.net/operations/basics/requirements): hardware, datacentre, network, security spec.
-- [Members](https://ibp.rotko.net/operations/auditors/members): current roster + canonical-config link.
+- [Members](https://ibp.rotko.net/operations/auditors/members): current operators + canonical-config link.
 - [Programme history](https://ibp.rotko.net/operations/auditors/progress): 2022 Kusama bounty → 2024 Polkadot → 2026 leaner top-up.
 
 ## Blog

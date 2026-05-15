@@ -213,7 +213,7 @@ export default function SubmitBootnodePage() {
           A curator merges from there. No server state is involved.
         </p>
 
-        <Suspense fallback={<p class="mt-10 text-paper-dim">Loading roster…</p>}>
+        <Suspense fallback={<p class="mt-10 text-paper-dim">Loading operators…</p>}>
           <div class="mt-10 card">
             <label class="block text-xs uppercase tracking-wider text-paper-dim mb-2">
               Your operator

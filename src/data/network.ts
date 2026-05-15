@@ -90,7 +90,7 @@ const CONFIG_BASE = '/data';
 // around in stale snapshots after the config repo was updated.
 const CACHE_KEY = 'ibp:network-snapshot:v2';
 // 5 minutes. The canonical config repo is the source of truth; if an operator
-// pushes Active=0 or a roster change there, the site should reflect it within
+// pushes Active=0 or an operator-set change there, the site should reflect it within
 // minutes, not an hour. GitHub raw is cheap to hit twice per hour worst-case.
 const CACHE_TTL_MS = 5 * 60 * 1000;
 

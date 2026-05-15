@@ -256,7 +256,7 @@ let cachedCountryRouting: Resource<CountryRouting> | null = null;
  *
  * `members` argument should be a stable list — we use it to fan out one
  * API call per operator. Pass the live snapshot's member names if you want
- * to follow roster changes automatically.
+ * to follow operator-set changes automatically.
  */
 export function useCountryRouting(members: () => readonly string[]): Resource<CountryRouting> {
   if (!cachedCountryRouting) {

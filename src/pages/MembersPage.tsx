@@ -9,7 +9,7 @@ import { useNetworkSnapshot } from '@/data/network';
 import { useDocMeta } from '@/utils/title';
 
 /**
- * /members — operator roster + service map, merged. The 2D map renders
+ * /members — operators + service map, merged. The 2D map renders
  * immediately (no WebGL chunk needed). A button promotes to the 3D globe
  * on demand; globe.gl is ~516 KB gzipped, so users who don't ask for the
  * flourish never pay for it.
@@ -55,7 +55,7 @@ export default function MembersPage() {
   useDocMeta({
     title: 'Members',
     description:
-      'Seven independent operators run the IBP across five continents: bare-metal hardware, member-owned datacentres, GeoDNS-routed. Live service map and full roster.',
+      'Seven independent operators run the IBP across four continents: bare-metal hardware, member-owned datacentres, GeoDNS-routed. Live service map and full operator list.',
   });
   const stats = useDashboardStats();
   const snap = useNetworkSnapshot();
@@ -312,7 +312,7 @@ export default function MembersPage() {
         </div>
 
         <p class="mt-10 text-xs text-paper-dim">
-          Canonical roster from{' '}
+          Canonical operator list from{' '}
           <a class="text-cyan underline" href="https://github.com/ibp-network/config" target="_blank" rel="noreferrer">
             ibp-network/config
           </a>

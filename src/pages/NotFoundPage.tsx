@@ -5,7 +5,7 @@ import { useDocMeta } from '@/utils/title';
 export default function NotFoundPage() {
   useDocMeta({
     title: 'Not found',
-    description: 'Page not found. Try /endpoints for public RPC URLs, /build to start a dApp, or /members for the operator roster.',
+    description: 'Page not found. Try /endpoints for public RPC URLs, /build to start a dApp, or /members for the operators.',
   });
   const location = useLocation();
   return (

@@ -5,7 +5,7 @@
  * (fetched live by src/data/network.ts). Coordinates are NOT in the canonical
  * config (only IPv4 addresses are), so we keep a small local mapping here.
  *
- * When the upstream roster changes, sync the list below to the active members
+ * When the upstream operator set changes, sync the list below to the active members
  * in members_professional.json. Names must match the `Details.Name` field
  * exactly so the Globe can join against canonical data if needed.
  */
@@ -42,7 +42,7 @@ export const members: readonly Member[] = [
 
 // Map a cloud-region-style code to a *real* continent. The old version
 // did `region.split('-')[0]`, which counted `us-east` as a continent
-// "us" separate from `america-central` → "america" — so a roster that
+// "us" separate from `america-central` → "america" — so an operator set that
 // physically spans 4 continents (Europe, Africa, Asia, the Americas)
 // over-reported as 5. We collapse every Americas code into one bucket
 // so the "Continents" stat matches the map and reality.
