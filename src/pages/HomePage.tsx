@@ -155,6 +155,14 @@ export default function HomePage() {
           width="320"
           height="174"
           decoding="async"
+          // Wordmark sits below the H1 / endpoint / CTA stack — pure
+          // brand decoration, not LCP. fetchpriority="low" tells the
+          // browser to yield bandwidth to the hero background WebP
+          // (which is preloaded with fetchpriority="high" from
+          // index.html). loading="lazy" then short-circuits the fetch
+          // entirely if the user never scrolls into view.
+          loading="lazy"
+          fetchpriority="low"
           class="mt-10 mb-4 select-none"
           style={{
             width: 'clamp(220px, 26vw, 320px)',

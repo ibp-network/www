@@ -1,3 +1,4 @@
+import { A } from '@solidjs/router';
 import { site } from '@/data/site';
 import CopyableEndpoint from '@/components/CopyableEndpoint';
 import MatrixChatEmbed from '@/components/MatrixChatEmbed';
@@ -123,7 +124,12 @@ export default function ContactPage() {
               <span class="i-mdi-shield-check-outline text-cyan shrink-0 mt-0.5" />
               <span>
                 For confidential security reports, DM an operator in-room
-                (handles are in the room topic) rather than posting publicly.
+                rather than posting publicly — every operator's Matrix
+                handle is listed on the{' '}
+                <A href="/operations/auditors/members" class="text-cyan underline">
+                  members page
+                </A>
+                .
               </span>
             </li>
           </ul>

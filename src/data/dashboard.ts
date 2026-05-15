@@ -3,8 +3,11 @@
  * Source of truth: ibdash.dotters.network. See dashboard /api source at
  * /steam/rotko/ibp/ibp-geodns-dashboard/src/components/ApiHelper/ApiHelper.js.
  *
- * Strategy: createResource singleton, 1-minute stale-while-revalidate.
- * Failures degrade silently — the home page renders proposal-derived fallbacks.
+ * Strategy: createResource singletons, fetch-once-per-session. Redbean's
+ * OnHttpRequest hour cache fronts the upstream (see public/.init.lua →
+ * serveIbdashApi), so a busy visit doesn't bombard ibdash even though we
+ * don't do client-side revalidation. Failures degrade silently — the home
+ * page renders proposal-derived fallbacks.
  */
 
 import { createResource, type Resource } from 'solid-js';
@@ -63,8 +66,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const d1 = new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000);
   const d30 = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const settle = async <T>(p: Promise<T>): Promise<T | null> =>
-    p.then((v) => v).catch(() => null);
+  // No `async` + no `.then((v) => v)` no-op — `p.catch` already returns
+  // Promise<T | null> on its own. Skipping the identity transform shaves
+  // one microtask hop per sub-fetch (×3 here).
+  const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null);
 
   const [last24h, last30d, services] = await Promise.all([
     settle(fetchJson<RequestsSummary>(`${API_BASE}/requests/summary?start=${ymd(d1)}&end=${ymd(today)}`)),

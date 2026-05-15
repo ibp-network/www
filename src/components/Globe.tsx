@@ -1,6 +1,5 @@
-import { createEffect, createSignal, onCleanup, onMount, type JSX } from 'solid-js';
+import { createEffect, createSignal, getOwner, onCleanup, onMount, runWithOwner, type JSX } from 'solid-js';
 import type { Member } from '@/data/members';
-import ServiceMap2D from './ServiceMap2D';
 import {
   compactNumber,
   useCountryRequests,
@@ -246,6 +245,14 @@ export default function Globe(props: {
   members: readonly Member[];
   /** Optional lookup of operator name → logo URL (from the canonical config). */
   logoByName?: Record<string, string>;
+  /**
+   * Rendered if WebGL is unavailable or globe.gl fails to initialise. The
+   * parent supplies it (rather than this component importing a fallback
+   * directly) so the fallback component isn't duplicated across both
+   * the parent's main chunk and the lazy Globe chunk — Carniato-style
+   * de-dup at the chunk boundary.
+   */
+  webglFallback?: JSX.Element;
 }): JSX.Element {
   let host: HTMLDivElement | undefined;
   let mount: HTMLDivElement | undefined;
@@ -258,6 +265,14 @@ export default function Globe(props: {
   // when useMemberRequests resolves. Lives on the closure so the htmlElement
   // callback and the dashboard effect can both see it.
   const markerCards = new Map<string, MarkerCard>();
+
+  // Captured synchronously while the component's reactive owner is still
+  // on the stack. onMount's callback awaits a dynamic import + fetch;
+  // after the first await Solid's owner context is gone, so any
+  // createEffect/onCleanup created post-await would leak (the
+  // "computations created outside a createRoot/render" warnings). We
+  // re-enter this owner with runWithOwner so they dispose on unmount.
+  const owner = getOwner();
 
   onMount(async () => {
     if (!host || !mount) return;
@@ -277,6 +292,10 @@ export default function Globe(props: {
         /* fall through with empty land mask; ocean-only globe still works */
       }
 
+      // Re-enter the captured reactive owner: everything below creates
+      // createEffect/onCleanup, which must be owned so they dispose when
+      // the user navigates away from /members (otherwise they leak).
+      runWithOwner(owner, () => {
       const globe = new Globe(mount)
         .backgroundColor('rgba(0,0,0,0)')
         // No globeImageUrl — solid sphere only, continents rendered via hexPolygonsData below.
@@ -350,14 +369,12 @@ export default function Globe(props: {
         sceneGlobe.shininess = 0.8;
       }
 
-      // Refresh country heat-layer points whenever the dashboard resource
-      // resolves (or revalidates). Stays cheap: ~80 pillars, no allocations
-      // when the resource hasn't changed.
-      createEffect(() => {
-        const r = countryReqs();
-        if (!r) return;
-        globe.pointsData(buildCountryPoints(r.rows, r.max));
-      });
+      // (Country heat-layer points are populated by the streaming effect
+      //  below — see the BATCH-tick loop. There was a second
+      //  createEffect here that bulk-set pointsData() in one shot; it
+      //  fought the streamer (pop-in then reset-to-batch then stream-up)
+      //  and burned a duplicate buildCountryPoints pass on every refresh.
+      //  The streamer alone covers both first-paint and revalidation.)
 
       // Traffic arcs from country centroids to operator pins. Top 36 edges
       // by request volume; the visual carries the dominant routes (US →
@@ -437,6 +454,7 @@ export default function Globe(props: {
         const destructor = (globe as any)._destructor;
         if (typeof destructor === 'function') destructor.call(globe);
       });
+      }); // end runWithOwner
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -554,8 +572,11 @@ export default function Globe(props: {
       <div ref={mount} class="absolute inset-0" />
       {error() && (
         <div class="absolute inset-0">
-          {/* WebGL unavailable — fall back to the 2D service map (Figma direction). */}
-          <ServiceMap2D />
+          {/* WebGL unavailable — render whatever fallback the parent passes.
+              The parent already has its fallback component loaded for the
+              "before user toggles 3D" state, so we reuse that bundle
+              instead of importing a duplicate. */}
+          {props.webglFallback}
         </div>
       )}
       {/* Hover card is rendered INSIDE each marker element (see markerEl)

@@ -143,12 +143,14 @@ export type Routing = {
   source: 'timezone' | 'ip' | 'doh';
 };
 
-/** Pick the member closest to the given anchor. */
+/** Pick the member closest to the given anchor. Members already carry
+ *  {lat,lng}, so pass them straight through — avoids allocating an
+ *  object literal per iteration of the haversine loop. */
 export function pickMember(anchor: { lat: number; lng: number }, source: Routing['source']): Routing {
   let best = members[0];
   let bestDist = Infinity;
   for (const m of members) {
-    const d = haversineKm(anchor, { lat: m.lat, lng: m.lng });
+    const d = haversineKm(anchor, m);
     if (d < bestDist) {
       best = m;
       bestDist = d;
@@ -183,45 +185,6 @@ export async function refineWithIp(): Promise<Routing | null> {
   } catch {
     return null;
   }
-}
-
-/**
- * Resolve the IBP GeoDNS hostname via DNS-over-HTTPS, then match the returned
- * A-record IP against the canonical members' ServiceIPv4 to find the actual
- * operator we'd hit. Most accurate signal short of opening a real connection.
- *
- * Privacy footprint: one DNS-over-HTTPS query to Cloudflare for the chain
- * hostname. No more invasive than the connection the user is about to make.
- *
- * Returns null if DoH fails, the IP isn't in the member list, or anything else
- * goes wrong — callers should fall back to the timezone estimate.
- */
-export async function refineWithDoh(
-  hostname = 'asset-hub-polkadot.dotters.network',
-): Promise<{ member: Member; ip: string } | null> {
-  try {
-    const res = await fetch(
-      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`,
-      { headers: { Accept: 'application/dns-json' } },
-    );
-    if (!res.ok) return null;
-    const data = (await res.json()) as { Answer?: Array<{ type: number; data: string }> };
-    return data.Answer?.find((a) => a.type === 1)?.data ? null : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Pure helper — match an IP against the active-member ServiceIPv4 list passed
- * in from a network snapshot. Kept separate so geo.ts doesn't pull in the
- * dashboard fetcher.
- */
-export function matchMemberByIp(
-  ip: string,
-  membersWithIp: Array<{ name: string; ipv4: string }>,
-): string | null {
-  return membersWithIp.find((m) => m.ipv4 === ip)?.name ?? null;
 }
 
 /** DoH lookup → first A record (IPv4). Returns IP string or null. */

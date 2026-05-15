@@ -40,9 +40,28 @@ export const members: readonly Member[] = [
   { name: 'Turboflakes',    region: 'europe-southwest',country: 'Portugal',    city: 'Lisbon',    lat: 38.72, lng:  -9.14, website: 'https://turboflakes.io',  logoUrl: `${L}/turboflakes.png` },
 ];
 
-// Continent count derives from the region-code prefix (`europe-west` →
-// `europe`) so the "Continents" stat still reads 5, not 7-distinct-codes.
-const continentOf = (region: string): string => region.split('-')[0];
+// Map a cloud-region-style code to a *real* continent. The old version
+// did `region.split('-')[0]`, which counted `us-east` as a continent
+// "us" separate from `america-central` → "america" — so a roster that
+// physically spans 4 continents (Europe, Africa, Asia, the Americas)
+// over-reported as 5. We collapse every Americas code into one bucket
+// so the "Continents" stat matches the map and reality.
+const CONTINENT_BY_PREFIX: Record<string, string> = {
+  europe: 'Europe',
+  africa: 'Africa',
+  asia: 'Asia',
+  america: 'Americas',
+  us: 'Americas',
+  na: 'Americas',
+  sa: 'Americas',
+  oceania: 'Oceania',
+  au: 'Oceania',
+  antarctica: 'Antarctica',
+};
+const continentOf = (region: string): string => {
+  const prefix = region.split('-')[0];
+  return CONTINENT_BY_PREFIX[prefix] ?? prefix;
+};
 
 export const memberStats = {
   count: members.length,

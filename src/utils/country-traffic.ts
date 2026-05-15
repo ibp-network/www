@@ -28,23 +28,20 @@ export type CountryBubble = {
 
 export type CountryTrafficRow = { code: string; name: string; requests: number };
 
-export type BuildOptions = {
-  /** Cap the bubble count to the top-N traffic countries. Default: no cap. */
-  top?: number;
-};
-
+/**
+ * Caller contract: `rows` MUST come pre-sorted descending by request count.
+ * `useCountryRequests` in data/dashboard.ts already returns them that way, so
+ * we just preserve order through the projection — no redundant `.sort()` here
+ * (and no `[...rows]` copy). Renderers can rely on first-row-is-busiest for
+ * staggered animations.
+ */
 export function buildCountryBubbles(
   rows: ReadonlyArray<CountryTrafficRow> | undefined,
   max: number | undefined,
-  options: BuildOptions = {},
 ): CountryBubble[] {
   if (!rows || !max) return [];
-  const source =
-    options.top != null && options.top < rows.length
-      ? [...rows].sort((a, b) => b.requests - a.requests).slice(0, options.top)
-      : rows;
   const out: CountryBubble[] = [];
-  for (const row of source) {
+  for (const row of rows) {
     const c = countryCentroid[row.code];
     if (!c) continue;
     const share = row.requests / max;

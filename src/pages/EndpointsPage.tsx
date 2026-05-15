@@ -14,6 +14,13 @@ import {
 
 const ecosystems: Network['ecosystem'][] = ['polkadot', 'kusama', 'paseo'];
 
+// Stable empty-array sentinel: when a chain has no bootnodes in the
+// snapshot, the JSX fallback used to allocate a fresh [] every render,
+// churning BootnodeDetails' `list` prop identity and forcing downstream
+// memos to re-run. Reusing one frozen array keeps Solid's
+// reference-equality fast-paths happy.
+const EMPTY_BOOTNODES: readonly Bootnode[] = Object.freeze([]) as readonly Bootnode[];
+
 type Protocol = 'wss' | 'https';
 
 function toProtocol(url: string, target: Protocol): string {
@@ -28,8 +35,14 @@ function BootnodeDetails(props: { list: Bootnode[]; chainSpecUrl?: string; chain
   const [status, setStatus] = createSignal<Record<string, ProbeStatus>>({});
   const [probed, setProbed] = createSignal(false);
 
-  const browserReachable = () =>
-    props.list.filter((b) => b.transport === 'wss');
+  // Memoize the /wss subset: read three times below (startProbes,
+  // <Show when>, <For each>). Without the memo each read re-runs
+  // .filter() AND returns a fresh array — Solid's <For> would see a
+  // new identity every reactive tick even when the bootnode list is
+  // unchanged. Memoized identity makes <For> a no-op past first mount.
+  const browserReachable = createMemo(() =>
+    props.list.filter((b) => b.transport === 'wss'),
+  );
 
   // Fire when the user expands the section. Probe all /wss bootnodes
   // concurrently and update the status map as each resolves. Bundle
@@ -507,7 +520,7 @@ export default function EndpointsPage() {
                             {(n) => (
                               <NetworkCard
                                 network={n}
-                                bootnodes={snapshot()?.bootnodesByChain[n.commandId] ?? []}
+                                bootnodes={snapshot()?.bootnodesByChain[n.commandId] ?? (EMPTY_BOOTNODES as Bootnode[])}
                                 protocol={protocol()}
                               />
                             )}
@@ -524,7 +537,7 @@ export default function EndpointsPage() {
                               {(n) => (
                                 <NetworkCard
                                   network={n}
-                                  bootnodes={snapshot()?.bootnodesByChain[n.commandId] ?? []}
+                                  bootnodes={snapshot()?.bootnodesByChain[n.commandId] ?? (EMPTY_BOOTNODES as Bootnode[])}
                                   protocol={protocol()}
                                 />
                               )}

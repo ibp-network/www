@@ -328,10 +328,10 @@ export default function ServiceMap2D() {
           const size = 4 + b.sizeT * 56;
           const fill = bubbleColor(b.colorT, 0.55);
           const glow = bubbleColor(b.colorT, 0.32);
-          // Staggered fade-in: bubbles arrive top-traffic first (rows are
-          // pre-sorted by request count in `buildCountryBubbles`). 25 ms
-          // per bubble means the whole field of ~80 lands inside 2 s. CSS
-          // animation is GPU-cheap; no JS bookkeeping required.
+          // Staggered fade-in: bubbles arrive top-traffic first (rows come
+          // pre-sorted descending from useCountryRequests, preserved by
+          // buildCountryBubbles). 25 ms per bubble means the whole field of
+          // ~80 lands inside 2 s. CSS animation is GPU-cheap; no JS bookkeeping.
           return (
             <div
               class="country-bubble"

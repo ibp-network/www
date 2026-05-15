@@ -15,12 +15,24 @@
  * unavoidable browser overhead). It maps closer to ICMP ping than any
  * average would.
  *
- * No magic divisor. The old code did `/2` to approximate "warm
- * connection RTT" from a cold TCP+TLS measurement. That divisor is
- * wrong on TLS 1.2 (2-RTT handshake), wrong on connection reuse, and
- * empirically too aggressive. The number we report now is the
- * raw browser-observed RTT (cold connect + TLS abort). It will be
- * larger than ICMP ping but at least it's honest.
+ * Single-RTT estimate. People read "latency" as a sense of distance
+ * (≈ ping), so we report one round-trip, not the full connection
+ * setup. This probe has NO connection reuse — the cert is bound to a
+ * hostname so every direct-IP sample is a fresh cold connect that
+ * aborts at certificate verification. A cold connect-to-cert is
+ * ~2 round trips: 1 for the TCP handshake + 1 for the TLS 1.3
+ * ServerHello/Certificate flight (TLS 1.3 is the realistic case;
+ * on legacy TLS 1.2 it's ~3, so this slightly under-reports there —
+ * acceptable for a "how far is this operator" indicator). Dividing
+ * the MIN sample by 2 isolates roughly one RTT. This is NOT the old
+ * dishonest "warm-connection /2" (that was wrong precisely because
+ * it assumed reuse — we never reuse here).
+ *
+ * This is an *estimate*. The real, application-level query latency
+ * (open WSS, chain_getHeader, measure) is on the /endpoints page via
+ * TestConnection, which talks to the GeoDNS hostname with a valid
+ * cert. /members can't do that per-operator (direct-IP TLS fails),
+ * so it shows this connect-derived estimate instead.
  *
  * fetch, not Image. img.onerror has slow, browser-specific cleanup
  * paths; fetch with no-cors + opaque response fails immediately on
@@ -70,9 +82,12 @@ export function probeIp(ipv4: string, timeoutMs = TIMEOUT_MS): Promise<number | 
       if (x !== null) xs.push(x);
     }
     if (xs.length === 0) return null;
-    const min = Math.min(...xs);
-    cache.set(ipv4, min);
-    return min;
+    // MIN = network floor across samples (least browser/scheduler noise).
+    // /2 ≈ one round trip out of the ~2-RTT cold connect-to-cert (see
+    // header). Single RTT is the "distance" number users expect.
+    const singleRttEstimate = Math.min(...xs) / 2;
+    cache.set(ipv4, singleRttEstimate);
+    return singleRttEstimate;
   })();
 }
 

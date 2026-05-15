@@ -11,12 +11,10 @@ import { createResource, type Resource } from 'solid-js';
 
 export type Header = {
   number: number;
-  hash: string;
 };
 
 export type SubstrateProbe = {
   number: number;
-  hash: string;
   version: string | null;
   chain: string | null;
   nodeName: string | null;
@@ -120,16 +118,18 @@ function asHexNum(v: unknown): number | null {
 }
 
 /**
- * Fetch the latest finalized block header from a Substrate RPC over WebSocket.
+ * Fetch the latest *best* block header from a Substrate RPC over WebSocket.
+ * `chain_getHeader` with no args returns the current best (not finalized — that
+ * would need `chain_getFinalizedHead` first and a second RPC). For a live
+ * block-height display the best block is what we want; finalized lags ~30s.
  * Returns null if the connection fails or times out.
  */
-export async function fetchFinalizedHeader(wsUrl: string): Promise<Header | null> {
+export async function fetchBestHeader(wsUrl: string): Promise<Header | null> {
   const out = await wsRpcBatch(wsUrl, [{ id: 1, method: 'chain_getHeader' }]);
-  const r = out.get(1) as { number?: unknown; parentHash?: unknown } | null | undefined;
+  const r = out.get(1) as { number?: unknown } | null | undefined;
   if (!r) return null;
   const num = asHexNum(r.number);
-  if (num == null) return null;
-  return { number: num, hash: asStr(r.parentHash) ?? '' };
+  return num == null ? null : { number: num };
 }
 
 /**
@@ -137,7 +137,7 @@ export async function fetchFinalizedHeader(wsUrl: string): Promise<Header | null
  * No polling: one shot. Caller can re-fetch by changing the source signal.
  */
 export function useLatestBlock(wsUrl: () => string): Resource<Header | null> {
-  const [r] = createResource(wsUrl, (url) => fetchFinalizedHeader(url));
+  const [r] = createResource(wsUrl, (url) => fetchBestHeader(url));
   return r;
 }
 
@@ -154,7 +154,7 @@ export async function probeSubstrate(wsUrl: string): Promise<SubstrateProbe | nu
     { id: 4, method: 'system_name' },
     { id: 5, method: 'system_health' },
   ]);
-  const head = out.get(1) as { number?: unknown; parentHash?: unknown } | null | undefined;
+  const head = out.get(1) as { number?: unknown } | null | undefined;
   if (!head) return null;
   const num = asHexNum(head.number);
   if (num == null) return null;
@@ -166,7 +166,6 @@ export async function probeSubstrate(wsUrl: string): Promise<SubstrateProbe | nu
 
   return {
     number: num,
-    hash: asStr(head.parentHash) ?? '',
     version: asStr(out.get(2)),
     chain: asStr(out.get(3)),
     nodeName: asStr(out.get(4)),

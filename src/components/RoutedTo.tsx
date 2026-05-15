@@ -111,12 +111,16 @@ export default function RoutedTo(props: { variant?: 'badge' | 'panel'; hostname?
                       }
                     >
                       <>
-                        {/* The hostname → IP can be ~40 chars of unbreakable
-                            mono text — wrap it in its own block with
-                            break-all so it never forces the parent card past
-                            the viewport width. */}
-                        <div class="font-mono break-all">
-                          {props.hostname ?? DEFAULT_HOSTNAME} → {resolved()?.ip}
+                        {/* Hostname may break anywhere (it's a domain —
+                            breaking mid-label is acceptable), but the IP
+                            must wrap as one unit: break-all on the whole
+                            line splits "160.22.181.81" into "16" / "0.22…"
+                            on a narrow phone, which reads as corrupt. Keep
+                            the arrow + IP in a nowrap span so it moves to
+                            the next line whole. */}
+                        <div class="font-mono">
+                          <span class="break-all">{props.hostname ?? DEFAULT_HOSTNAME}</span>
+                          <span class="whitespace-nowrap"> → {resolved()?.ip}</span>
                         </div>
                         <div class="mt-1 flex flex-wrap items-center gap-1">
                           <span class="inline-block px-1.5 py-0.5 rounded bg-cyan/15 text-cyan border border-cyan/30">

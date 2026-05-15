@@ -137,18 +137,43 @@ export function TreePage(props: TreePageProps): JSX.Element {
 
 /* ─────────────────────────────── sidebar ────────────────────────────────── */
 
+function NavTree(props: { tree: WikiCategory[]; currentSlug: string; urlPrefix: string }) {
+  return (
+    <nav class="space-y-6 text-sm">
+      <For each={props.tree}>
+        {(cat) => <CategoryBlock cat={cat} currentSlug={props.currentSlug} urlPrefix={props.urlPrefix} />}
+      </For>
+    </nav>
+  );
+}
+
 function Sidebar(props: { tree: WikiCategory[]; currentSlug: string; urlPrefix: string }) {
   return (
-    <aside
-      class="lg:w-72 lg:shrink-0 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
-      aria-label="Docs navigation"
-    >
-      <nav class="space-y-6 text-sm">
-        <For each={props.tree}>
-          {(cat) => <CategoryBlock cat={cat} currentSlug={props.currentSlug} urlPrefix={props.urlPrefix} />}
-        </For>
-      </nav>
-    </aside>
+    <>
+      {/* Mobile: the full nav tree stacked above the article pushed the
+          doc you tapped ~1250px down the page (1.5 screens of scroll past
+          title + intro + 22 nav links). Collapse it behind a disclosure
+          so the content sits right under the page header. Desktop is
+          unchanged — the sticky sidebar below. */}
+      <details class="group lg:hidden rounded-lg border border-ink-600 bg-ink-900/40">
+        <summary class="cursor-pointer list-none px-4 py-3 flex items-center justify-between text-sm font-medium text-paper">
+          <span class="inline-flex items-center gap-2">
+            <span class="i-mdi-book-open-page-variant text-cyan" /> Browse docs
+          </span>
+          <span class="i-mdi-chevron-down text-paper-dim transition-transform group-open:rotate-180" />
+        </summary>
+        <div class="px-2 pb-3 pt-1 max-h-[60vh] overflow-y-auto border-t border-ink-700">
+          <NavTree tree={props.tree} currentSlug={props.currentSlug} urlPrefix={props.urlPrefix} />
+        </div>
+      </details>
+
+      <aside
+        class="hidden lg:block lg:w-72 lg:shrink-0 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+        aria-label="Docs navigation"
+      >
+        <NavTree tree={props.tree} currentSlug={props.currentSlug} urlPrefix={props.urlPrefix} />
+      </aside>
+    </>
   );
 }
 

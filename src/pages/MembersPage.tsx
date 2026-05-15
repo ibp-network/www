@@ -196,7 +196,7 @@ export default function MembersPage() {
           >
             <div class="card p-0 overflow-hidden aspect-square sm:aspect-[16/9] bg-ink-950">
               <Suspense fallback={<div class="w-full h-full animate-pulse bg-glass" aria-hidden />}>
-                <Globe members={members} />
+                <Globe members={members} webglFallback={<ServiceMap2D />} />
               </Suspense>
             </div>
           </Show>

@@ -7,6 +7,39 @@ import { buildContentTrees, setIbpVars, type IbpVars } from './src/data/wiki-bui
 import type { WikiCategory } from './src/data/wiki-types';
 
 /**
+ * Single shared loader for the canonical IBP config JSONs.
+ *
+ * Both wikiContentPlugin (markdown __IBP_*__ substitution) and
+ * configMirrorPlugin (dist/data/* mirroring + dev middleware) need data
+ * from raw.githubusercontent.com/ibp-network/config. Without this each
+ * plugin fetched independently in its own buildStart, doubling the
+ * cold-start round-trips and the flakiness surface.
+ *
+ * We memoize the Promise (not the resolved Map). Concurrent callers
+ * during the same buildStart phase share the in-flight request — one
+ * fetch satisfies both consumers. On rejection the promise is cleared
+ * so a transient network failure doesn't poison the cache for the
+ * rest of the process; the next caller retries.
+ */
+const CONFIG_BASE = 'https://raw.githubusercontent.com/ibp-network/config/main';
+const CONFIG_FILES = ['bootnodes.json', 'members_professional.json', 'services_rpc.json'] as const;
+type ConfigName = (typeof CONFIG_FILES)[number];
+let configCachePromise: Promise<Map<ConfigName, string>> | null = null;
+function loadCanonicalConfigs(): Promise<Map<ConfigName, string>> {
+  if (configCachePromise) return configCachePromise;
+  const p = Promise.all(
+    CONFIG_FILES.map(async (name) => {
+      const r = await fetch(`${CONFIG_BASE}/${name}`);
+      if (!r.ok) throw new Error(`canonical config fetch: ${name} HTTP ${r.status}`);
+      return [name, await r.text()] as const;
+    }),
+  ).then((pairs) => new Map<ConfigName, string>(pairs));
+  p.catch(() => { configCachePromise = null; });
+  configCachePromise = p;
+  return p;
+}
+
+/**
  * Three virtual modules — one per content tree — so each route only pays for
  * the content it actually renders:
  *   virtual:ibp-docs   → src/docs/**   → consumed by /build/*       (DocsPage)
@@ -50,10 +83,10 @@ function wikiContentPlugin(): Plugin {
     Location?: { Country?: string };
   };
   async function loadIbpVars(): Promise<IbpVars> {
-    const url = 'https://raw.githubusercontent.com/ibp-network/config/main/members_professional.json';
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`members_professional.json fetch: HTTP ${r.status}`);
-    const raw: Record<string, RawMember> = await r.json();
+    const configs = await loadCanonicalConfigs();
+    const text = configs.get('members_professional.json');
+    if (!text) throw new Error('members_professional.json missing from canonical config cache');
+    const raw: Record<string, RawMember> = JSON.parse(text);
     const active = Object.values(raw)
       .filter((m) => m?.Service?.Active === 1)
       .map((m) => ({ name: m.Details?.Name ?? '', country: m.Location?.Country ?? '' }))
@@ -136,19 +169,15 @@ function wikiContentPlugin(): Plugin {
  * complete) from the most-trafficked dynamic pages.
  */
 function configMirrorPlugin(): Plugin {
-  const FILES = ['bootnodes.json', 'members_professional.json', 'services_rpc.json'] as const;
-  const BASE = 'https://raw.githubusercontent.com/ibp-network/config/main';
   const cache = new Map<string, string>();
 
   async function fetchAll() {
-    if (cache.size === FILES.length) return;
-    await Promise.all(
-      FILES.map(async (name) => {
-        const r = await fetch(`${BASE}/${name}`);
-        if (!r.ok) throw new Error(`mirror: ${name} ${r.status}`);
-        cache.set(name, await r.text());
-      }),
-    );
+    if (cache.size === CONFIG_FILES.length) return;
+    const configs = await loadCanonicalConfigs();
+    for (const name of CONFIG_FILES) {
+      const body = configs.get(name);
+      if (body) cache.set(name, body);
+    }
   }
 
   return {
@@ -481,6 +510,34 @@ function prerenderPlugin(): Plugin {
   };
 }
 
+/**
+ * Dev-only: scope the hero-background preload to the homepage.
+ *
+ * index.html statically declares `<link rel="preload" ... figma-hero-bg.webp>`
+ * because that WebP is the homepage LCP image and the preload scanner must
+ * see it before JS. In production prerenderPlugin strips that line from every
+ * per-route HTML except `/`. The dev server has no prerender — it serves the
+ * raw index.html for every SPA route — so /members, /build, etc. fire an
+ * unused preload and log "preloaded but not used". This mirrors the prod
+ * strip in dev so dev === prod and the console stays clean.
+ */
+function heroPreloadDevScopePlugin(): Plugin {
+  return {
+    name: 'ibp-hero-preload-dev-scope',
+    apply: 'serve',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html, ctx) {
+        if (ctx.path === '/' || ctx.path === '/index.html') return html;
+        return html.replace(
+          /\s*<link rel="preload"[^>]*figma-hero-bg\.webp[^>]*\/?>\s*/,
+          '\n    ',
+        );
+      },
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     solidPlugin(),
@@ -489,6 +546,7 @@ export default defineConfig({
     configMirrorPlugin(),
     sitemapPlugin(),
     prerenderPlugin(),
+    heroPreloadDevScopePlugin(),
   ],
   resolve: {
     alias: {

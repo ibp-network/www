@@ -104,6 +104,33 @@ const memberKeyAliases: Record<string, string> = {
   turboflakes: 'Turboflakes',
 };
 
+// Inverted alias map for member-name → config-key resolution. Pre-built
+// at module load so the snapshot fetcher doesn't redo Object.entries +
+// linear scan per member on every fresh load (was O(members × aliases),
+// now O(1) lookup).
+const memberNameToKey: Record<string, string> = Object.fromEntries(
+  Object.entries(memberKeyAliases).map(([k, v]) => [v, k]),
+);
+
+// Chain-id-prefix → chainspec-repo-folder mapping. The `inRepo` field
+// is which (ecosystem, parachain) pairs paritytech/chainspecs actually
+// carries a JSON file for — Coretime-Polkadot and People-Polkadot are
+// live chains we route to, but the chainspecs repo doesn't have their
+// JSON yet, so we can't link to it (clicking would 404).
+//
+// Hoisted out of chainSpecPath() so the literal isn't reallocated on
+// every parseNetworks iteration.
+const CHAINSPEC_FOLDERS: Record<string, { folder: string; inRepo: Network['ecosystem'][] }> = {
+  'asset-hub':  { folder: 'asset-hub',  inRepo: ['polkadot', 'kusama', 'paseo'] },
+  'bridge-hub': { folder: 'bridge-hub', inRepo: ['polkadot', 'kusama', 'paseo'] },
+  collectives:  { folder: 'collectives', inRepo: ['polkadot', 'paseo'] },
+  coretime:     { folder: 'coretime',    inRepo: ['kusama', 'paseo'] },
+  people:       { folder: 'people',      inRepo: ['kusama', 'paseo'] },
+  encointer:    { folder: 'encointer',   inRepo: ['kusama'] },
+  hydration:    { folder: 'hydradx',     inRepo: ['polkadot'] }, // repo uses old name
+};
+const CHAINSPEC_KEYS = Object.keys(CHAINSPEC_FOLDERS);
+
 /* ─────────────────── Parsers ─────────────────── */
 
 type RawMember = {
@@ -183,21 +210,10 @@ function chainSpecPath(id: string, ecosystem: Network['ecosystem'], type: Networ
   const base = `${ecosystem}/parachain`;
   const lc = id.toLowerCase();
 
-  // Specific known-good mappings (chain → repo folder).
-  const knownFolders: Record<string, { folder: string; supported: Network['ecosystem'][] }> = {
-    'asset-hub': { folder: 'asset-hub', supported: ['polkadot', 'kusama', 'paseo'] },
-    'bridge-hub': { folder: 'bridge-hub', supported: ['polkadot', 'kusama', 'paseo'] },
-    collectives: { folder: 'collectives', supported: ['polkadot', 'paseo'] },
-    coretime: { folder: 'coretime', supported: ['kusama', 'paseo'] }, // not yet on polkadot
-    people: { folder: 'people', supported: ['kusama', 'paseo'] }, // not yet on polkadot
-    encointer: { folder: 'encointer', supported: ['kusama'] },
-    hydration: { folder: 'hydradx', supported: ['polkadot'] }, // repo uses old name
-  };
-
-  for (const key of Object.keys(knownFolders)) {
+  for (const key of CHAINSPEC_KEYS) {
     if (lc.startsWith(key)) {
-      const entry = knownFolders[key];
-      if (!entry.supported.includes(ecosystem)) return null;
+      const entry = CHAINSPEC_FOLDERS[key];
+      if (!entry.inRepo.includes(ecosystem)) return null;
       return `${base}/${entry.folder}/chainspec.json`;
     }
   }
@@ -370,12 +386,9 @@ async function fetchSnapshot(): Promise<NetworkSnapshot> {
   const networks = parseNetworks(servicesRaw);
 
   const activeMemberKeys = new Set(
-    members.map((m) => {
-      const entry = Object.entries(memberKeyAliases).find(
-        ([, name]) => name === m.name,
-      );
-      return entry?.[0] ?? m.name.toLowerCase().replace(/\s+/g, '');
-    }),
+    members.map(
+      (m) => memberNameToKey[m.name] ?? m.name.toLowerCase().replace(/\s+/g, ''),
+    ),
   );
 
   const bootnodesByChain = parseBootnodes(bootnodesRaw, activeMemberKeys);
