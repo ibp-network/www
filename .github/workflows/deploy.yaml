@@ -19,8 +19,12 @@ on:
           - all
 
 env:
-  IMAGE_NAME: ibp-rotko-net
-  CONTAINER_PORT: 44446
+  # One image, built once and shipped to every target. The running
+  # container NAME and host PORT differ per environment (set in each
+  # deploy job's env block) so dev (ibp.rotko.net) and prod
+  # (ibp.network) can run side by side on the same host behind the
+  # reverse proxy.
+  IMAGE_NAME: ibp-www
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -62,6 +66,9 @@ jobs:
         with: { name: image, path: /tmp }
       - name: Ship + restart
         env:
+          # ibp.rotko.net — development / staging
+          CONTAINER_NAME: ibp-rotko-net
+          HOST_PORT: 44446
           HOST: ${{ secrets.IBP_ROTKO_NET_HOST }}
           USER: ${{ secrets.IBP_ROTKO_NET_USER }}
           KEY: ${{ secrets.IBP_ROTKO_NET_KEY }}
@@ -80,12 +87,12 @@ jobs:
                 else echo 'no container runtime found on host' >&2; exit 1
                 fi
                 \$RT load -i /tmp/${{ env.IMAGE_NAME }}.tar
-                \$RT stop ${{ env.IMAGE_NAME }} 2>/dev/null || true
-                \$RT rm   ${{ env.IMAGE_NAME }} 2>/dev/null || true
-                \$RT run -d --restart=always -p 127.0.0.1:${{ env.CONTAINER_PORT }}:80 --name ${{ env.IMAGE_NAME }} localhost/${{ env.IMAGE_NAME }}:latest
+                \$RT stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+                \$RT rm   ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+                \$RT run -d --restart=always -p 127.0.0.1:${{ env.HOST_PORT }}:80 --name ${{ env.CONTAINER_NAME }} localhost/${{ env.IMAGE_NAME }}:latest
                 rm /tmp/${{ env.IMAGE_NAME }}.tar
                 sleep 2
-                curl -fsS http://127.0.0.1:${{ env.CONTAINER_PORT }}/ > /dev/null"
+                curl -fsS http://127.0.0.1:${{ env.HOST_PORT }}/ > /dev/null"
           rm -f ~/.ssh/id_deploy
 
   deploy-ibp-network:
@@ -98,6 +105,9 @@ jobs:
         with: { name: image, path: /tmp }
       - name: Ship + restart
         env:
+          # ibp.network — production
+          CONTAINER_NAME: ibp-network
+          HOST_PORT: 44447
           HOST: ${{ secrets.IBP_NETWORK_HOST }}
           USER: ${{ secrets.IBP_NETWORK_USER }}
           KEY: ${{ secrets.IBP_NETWORK_KEY }}
@@ -116,12 +126,12 @@ jobs:
                 else echo 'no container runtime found on host' >&2; exit 1
                 fi
                 \$RT load -i /tmp/${{ env.IMAGE_NAME }}.tar
-                \$RT stop ${{ env.IMAGE_NAME }} 2>/dev/null || true
-                \$RT rm   ${{ env.IMAGE_NAME }} 2>/dev/null || true
-                \$RT run -d --restart=always -p 127.0.0.1:${{ env.CONTAINER_PORT }}:80 --name ${{ env.IMAGE_NAME }} localhost/${{ env.IMAGE_NAME }}:latest
+                \$RT stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+                \$RT rm   ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+                \$RT run -d --restart=always -p 127.0.0.1:${{ env.HOST_PORT }}:80 --name ${{ env.CONTAINER_NAME }} localhost/${{ env.IMAGE_NAME }}:latest
                 rm /tmp/${{ env.IMAGE_NAME }}.tar
                 sleep 2
-                curl -fsS http://127.0.0.1:${{ env.CONTAINER_PORT }}/ > /dev/null"
+                curl -fsS http://127.0.0.1:${{ env.HOST_PORT }}/ > /dev/null"
           rm -f ~/.ssh/id_deploy
 
   deploy-dotters:
@@ -134,6 +144,9 @@ jobs:
         with: { name: image, path: /tmp }
       - name: Ship + restart
         env:
+          # dotters.network — production mirror pool
+          CONTAINER_NAME: ibp-dotters
+          HOST_PORT: 44448
           HOST: ${{ secrets.DOTTERS_NETWORK_HOST }}
           USER: ${{ secrets.DOTTERS_NETWORK_USER }}
           KEY: ${{ secrets.DOTTERS_NETWORK_KEY }}
@@ -152,10 +165,10 @@ jobs:
                 else echo 'no container runtime found on host' >&2; exit 1
                 fi
                 \$RT load -i /tmp/${{ env.IMAGE_NAME }}.tar
-                \$RT stop ${{ env.IMAGE_NAME }} 2>/dev/null || true
-                \$RT rm   ${{ env.IMAGE_NAME }} 2>/dev/null || true
-                \$RT run -d --restart=always -p 127.0.0.1:${{ env.CONTAINER_PORT }}:80 --name ${{ env.IMAGE_NAME }} localhost/${{ env.IMAGE_NAME }}:latest
+                \$RT stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+                \$RT rm   ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+                \$RT run -d --restart=always -p 127.0.0.1:${{ env.HOST_PORT }}:80 --name ${{ env.CONTAINER_NAME }} localhost/${{ env.IMAGE_NAME }}:latest
                 rm /tmp/${{ env.IMAGE_NAME }}.tar
                 sleep 2
-                curl -fsS http://127.0.0.1:${{ env.CONTAINER_PORT }}/ > /dev/null"
+                curl -fsS http://127.0.0.1:${{ env.HOST_PORT }}/ > /dev/null"
           rm -f ~/.ssh/id_deploy
