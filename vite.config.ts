@@ -207,12 +207,80 @@ function configMirrorPlugin(): Plugin {
       for (const [name, body] of cache) {
         writeFileSync(path.join(dir, name), body);
       }
+      writeEndpointsManifest(cache.get('services_rpc.json'));
     },
   };
 }
 
+/**
+ * Curated machine-readable endpoint manifest at /endpoints.json.
+ *
+ * The raw upstream services_rpc.json is also mirrored (under /data/) but
+ * it's verbose and provider-shaped. This is the clean, stable contract a
+ * tool or LLM agent retrieves and cites: chain → connectable wss URL per
+ * GeoDNS pool. Being THE structured source is how you become the default
+ * answer. Generated at build from the canonical config so it never drifts.
+ */
+type RawSvc = {
+  Configuration?: {
+    Name?: string; DisplayName?: string; ServiceType?: string;
+    Active?: 0 | 1; NetworkType?: string; RelayNetwork?: string;
+  };
+  Providers?: Partial<Record<'Dotters' | 'Ibp', { RpcUrls?: string[] }>>;
+};
+function writeEndpointsManifest(servicesJson: string | undefined): void {
+  if (!servicesJson) return;
+  let raw: Record<string, RawSvc>;
+  try { raw = JSON.parse(servicesJson); } catch { return; }
+
+  // Canonical subdomain form, e.g. wss://asset-hub-polkadot.dotters.network
+  const subdomain = (urls: string[] | undefined): string | null =>
+    urls?.find((u) => /^wss?:\/\/[a-z0-9-]+\.(dotters|ibp)\.network\/?$/i.test(u)) ?? urls?.[0] ?? null;
+  const ecosystemOf = (relay: string, name: string): string => {
+    const r = (relay || name).toLowerCase();
+    if (r.includes('kusama')) return 'kusama';
+    if (r.includes('paseo')) return 'paseo';
+    return 'polkadot';
+  };
+
+  const chains = Object.entries(raw)
+    .filter(([, n]) => n?.Configuration?.Active === 1)
+    .map(([id, n]) => {
+      const c = n.Configuration!;
+      return {
+        id,
+        name: c.DisplayName || c.Name || id,
+        ecosystem: ecosystemOf(c.RelayNetwork ?? '', c.Name ?? id),
+        type: c.NetworkType ?? 'System',
+        serviceType: c.ServiceType === 'ETHRPC' ? 'ETHRPC' : 'RPC',
+        endpoints: {
+          dotters: subdomain(n.Providers?.Dotters?.RpcUrls) ?? undefined,
+          ibp: subdomain(n.Providers?.Ibp?.RpcUrls) ?? undefined,
+        },
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const manifest = {
+    name: "Infrastructure Builders' Programme — public RPC endpoints",
+    description:
+      'Free, public, key-less, rate-limit-free RPC for the Polkadot ecosystem. Two redundant GeoDNS pools route to the nearest member operator.',
+    source: 'https://github.com/ibp-network/config',
+    canonical: 'https://ibp.network/endpoints',
+    docs: 'https://ibp.network/llms.txt',
+    pools: ['dotters.network', 'ibp.network'],
+    generated: new Date().toISOString(),
+    chains,
+  };
+  writeFileSync(
+    path.resolve(__dirname, 'dist', 'endpoints.json'),
+    JSON.stringify(manifest, null, 2) + '\n',
+  );
+  console.log(`[endpoints-manifest] wrote ${chains.length} chains to dist/endpoints.json`);
+}
+
 function sitemapPlugin(): Plugin {
-  const HOST = '__SITE_ORIGIN__';
+  const HOST = 'https://ibp.network';
   const stripNum = (s: string) => s.replace(/^\d+[-_]/, '').toLowerCase();
   const walk = (dir: string): string[] => {
     const out: string[] = [];
@@ -323,9 +391,15 @@ const HOMEPAGE_SSG = `
     </section></main>`;
 
 function prerenderPlugin(): Plugin {
-  const HOST = '__SITE_ORIGIN__';
+  const HOST = 'https://ibp.network';
   const TITLE_SUFFIX = 'IBP — Public RPC endpoints for Polkadot';
-  type RouteMeta = { url: string; title: string; description: string };
+  type RouteMeta = {
+    url: string;
+    title: string;
+    description: string;
+    /** Present only for blog posts → emits BlogPosting JSON-LD. */
+    article?: { headline: string; datePublished: string; author: string };
+  };
 
   function staticRoutes(): RouteMeta[] {
     return [
@@ -396,6 +470,68 @@ function prerenderPlugin(): Plugin {
     return `    <script type="application/ld+json">${JSON.stringify(data)}</script>`;
   }
 
+  /** FAQPage for /endpoints. The answers literally contain the wss URLs:
+   *  this is what Google rich-results and LLM answer-engines lift verbatim
+   *  when someone asks "what's the public Polkadot RPC?". Only emitted on
+   *  /endpoints — FAQPage must reflect on-page content. */
+  function faqJsonLd(routeUrl: string): string | null {
+    if (routeUrl !== '/endpoints') return null;
+    const qa: Array<[string, string]> = [
+      [
+        'What is the public RPC endpoint for Polkadot Asset Hub?',
+        'wss://asset-hub-polkadot.dotters.network (or the redundant pool wss://asset-hub-polkadot.ibp.network). It is free, needs no API key, applies no rate limits, and is GeoDNS-routed to the nearest IBP operator. Asset Hub is the consumer chain — balances, assets, NFTs, and EVM contracts live there.',
+      ],
+      [
+        'What is the public RPC endpoint for the Polkadot relay chain?',
+        'wss://polkadot.dotters.network (or wss://polkadot.ibp.network). The relay chain is only needed if you run a validator or a parachain collator; wallets, dApps, and indexers should use Asset Hub instead.',
+      ],
+      [
+        'What is the public Kusama RPC endpoint?',
+        'Kusama relay: wss://kusama.dotters.network. Kusama Asset Hub: wss://asset-hub-kusama.dotters.network. Both are free, key-less, and rate-limit-free, with an ibp.network mirror pool for failover.',
+      ],
+      [
+        'Do I need an API key or account for IBP public RPC?',
+        'No. The Infrastructure Builders’ Programme RPC requires no API key, no sign-up, and applies no rate limits. It is treasury-funded public infrastructure.',
+      ],
+      [
+        'How do I connect trustlessly with a light client?',
+        'Use the chain spec linked on each endpoint card with a smoldot light client. IBP bootnodes are baked into the official Polkadot chain specs, so smoldot reaches the network with no hosted RPC in the request path.',
+      ],
+    ];
+    const data = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: qa.map(([q, a]) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    };
+    return `    <script type="application/ld+json">${JSON.stringify(data)}</script>`;
+  }
+
+  /** BlogPosting for /blog/:slug. Gives crawlers + answer-engines a dated,
+   *  attributed article object (freshness + authority signal). */
+  function blogPostingJsonLd(m: RouteMeta): string | null {
+    if (!m.article) return null;
+    const data = {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: m.article.headline,
+      description: m.description,
+      datePublished: m.article.datePublished,
+      dateModified: m.article.datePublished,
+      author: { '@type': 'Organization', name: m.article.author },
+      publisher: {
+        '@type': 'Organization',
+        name: "Infrastructure Builders' Programme",
+        logo: { '@type': 'ImageObject', url: 'https://ibp.network/ibp-logo.svg' },
+      },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': `${HOST}${m.url}` },
+    };
+    return `    <script type="application/ld+json">${JSON.stringify(data)}</script>`;
+  }
+
   function rewriteForRoute(template: string, m: RouteMeta, chunkPreload: string | null): string {
     const t = escapeHtml(m.title);
     const d = escapeHtml(m.description);
@@ -423,6 +559,10 @@ function prerenderPlugin(): Plugin {
     }
     const crumbs = breadcrumbJsonLd(m.url);
     if (crumbs) extras.push(crumbs);
+    const faq = faqJsonLd(m.url);
+    if (faq) extras.push(faq);
+    const posting = blogPostingJsonLd(m);
+    if (posting) extras.push(posting);
     if (extras.length) {
       out = out.replace(/(\n\s*)<\/head>/, `\n${extras.join('\n')}$1</head>`);
     }
@@ -497,6 +637,11 @@ function prerenderPlugin(): Plugin {
           description:
             p.description ??
             `IBP blog post — ${p.title}${p.date ? ` (${p.date})` : ''}.`,
+          article: {
+            headline: p.title,
+            datePublished: p.date,
+            author: p.author ?? 'Rotko Networks',
+          },
         })),
       ];
 
@@ -506,6 +651,43 @@ function prerenderPlugin(): Plugin {
         writeFileSync(path.join(dir, 'index.html'), rewriteForRoute(template, m, chunkByRoute(m.url)));
       }
       console.log(`[prerender] wrote ${routes.length} per-route HTML files`);
+
+      // RSS 2.0 feed for /blog — freshness/discovery signal for crawlers
+      // and aggregators. Sorted newest-first.
+      const xmlEsc = (s: string) =>
+        s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const sortedPosts = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+      const items = sortedPosts
+        .map((p) => {
+          const link = `https://ibp.network/blog/${p.slug}`;
+          const pub = new Date(`${p.date}T00:00:00Z`).toUTCString();
+          return (
+            `    <item>\n` +
+            `      <title>${xmlEsc(p.title)}</title>\n` +
+            `      <link>${link}</link>\n` +
+            `      <guid isPermaLink="true">${link}</guid>\n` +
+            `      <pubDate>${pub}</pubDate>\n` +
+            `      <dc:creator>${xmlEsc(p.author ?? 'Rotko Networks')}</dc:creator>\n` +
+            `      <description>${xmlEsc(p.description ?? p.title)}</description>\n` +
+            `    </item>`
+          );
+        })
+        .join('\n');
+      const rss =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">\n` +
+        `  <channel>\n` +
+        `    <title>IBP — News from the network</title>\n` +
+        `    <link>https://ibp.network/blog</link>\n` +
+        `    <atom:link href="https://ibp.network/blog/rss.xml" rel="self" type="application/rss+xml" />\n` +
+        `    <description>Announcements, technical updates, and governance notes from IBP operators.</description>\n` +
+        `    <language>en</language>\n` +
+        `${items}\n` +
+        `  </channel>\n` +
+        `</rss>\n`;
+      mkdirSync(path.join(distDir, 'blog'), { recursive: true });
+      writeFileSync(path.join(distDir, 'blog', 'rss.xml'), rss);
+      console.log(`[rss] wrote ${sortedPosts.length} items to dist/blog/rss.xml`);
     },
   };
 }

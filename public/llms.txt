@@ -8,44 +8,46 @@ Primary endpoint: `wss://asset-hub-polkadot.dotters.network`
 
 ## Build (developer docs)
 
-- [Quickstart](https://ibp.rotko.net/build/start/quickstart): a typed Polkadot client in five minutes via PAPI.
-- [Pick a library](https://ibp.rotko.net/build/start/pick-a-library): PAPI vs reactive-dot vs Dedot vs subxt vs viem vs ethers.
-- [PAPI](https://ibp.rotko.net/build/connect/papi): the default TypeScript path.
-- [reactive-dot](https://ibp.rotko.net/build/connect/reactive-dot): React hooks over PAPI.
-- [Dedot](https://ibp.rotko.net/build/connect/dedot): Polkadot.js-shaped API with type-safe extrinsics.
-- [subxt](https://ibp.rotko.net/build/connect/subxt): the Rust path.
-- [Asset Hub overview](https://ibp.rotko.net/build/asset-hub/overview): why it's the chain, what lives on it, common queries.
-- [Smoldot light client](https://ibp.rotko.net/build/light-client/smoldot): trustless in-browser, no hosted RPC dependency.
-- [EVM on Asset Hub](https://ibp.rotko.net/build/evm/overview): viem / ethers, chain ID `420420417` for Paseo EVM.
-- [Wallet connection](https://ibp.rotko.net/build/recipes/wallet-connect): Talisman, SubWallet, Nova, Polkadot.js extension.
-- [Explorers](https://ibp.rotko.net/build/recipes/explorers): one-click links into dev.papi.how and polkadot.js.org/apps.
-- [LLMs and AI agents](https://ibp.rotko.net/build/recipes/llm-and-agents): MCP server patterns, prompt scaffolding.
-- [Runtime view functions](https://ibp.rotko.net/build/recipes/view-functions): `api.view.X.Y(...)` for read-only pallet queries.
+- [Quickstart](https://ibp.network/build/start/quickstart): a typed Polkadot client in five minutes via PAPI.
+- [Pick a library](https://ibp.network/build/start/pick-a-library): PAPI vs reactive-dot vs Dedot vs subxt vs viem vs ethers.
+- [PAPI](https://ibp.network/build/connect/papi): the default TypeScript path.
+- [reactive-dot](https://ibp.network/build/connect/reactive-dot): React hooks over PAPI.
+- [Dedot](https://ibp.network/build/connect/dedot): Polkadot.js-shaped API with type-safe extrinsics.
+- [subxt](https://ibp.network/build/connect/subxt): the Rust path.
+- [Asset Hub overview](https://ibp.network/build/asset-hub/overview): why it's the chain, what lives on it, common queries.
+- [Smoldot light client](https://ibp.network/build/light-client/smoldot): trustless in-browser, no hosted RPC dependency.
+- [EVM on Asset Hub](https://ibp.network/build/evm/overview): viem / ethers, chain ID `420420417` for Paseo EVM.
+- [Wallet connection](https://ibp.network/build/recipes/wallet-connect): Talisman, SubWallet, Nova, Polkadot.js extension.
+- [Explorers](https://ibp.network/build/recipes/explorers): one-click links into dev.papi.how and polkadot.js.org/apps.
+- [LLMs and AI agents](https://ibp.network/build/recipes/llm-and-agents): MCP server patterns, prompt scaffolding.
+- [Runtime view functions](https://ibp.network/build/recipes/view-functions): `api.view.X.Y(...)` for read-only pallet queries.
 
 ## Endpoints
 
-- [All endpoints](https://ibp.rotko.net/endpoints): copyable WSS / HTTPS URLs per chain, bootnode multiaddrs for trustless sync. Asset Hub first; relay chains are split into a "validator / collator endpoints" sub-section.
+- [All endpoints](https://ibp.network/endpoints): copyable WSS / HTTPS URLs per chain, bootnode multiaddrs for trustless sync. Asset Hub first; relay chains are split into a "validator / collator endpoints" sub-section.
+- Machine-readable manifest (JSON, chain → wss URL per pool): <https://ibp.network/endpoints.json>
 - Two redundant GeoDNS pools: `dotters.network` and `ibp.network`.
+- Primary connectable endpoint: `wss://asset-hub-polkadot.dotters.network` — free, no API key, no rate limits.
 
 ## Members
 
-- [Members](https://ibp.rotko.net/members): the seven operators (Amforc, Dwellir, Gatotech, RadiumBlock, Rotko Networks, Stake Plus, Turboflakes), region codes, 2D / 3D service map, per-operator request volume.
+- [Members](https://ibp.network/members): the seven operators (Amforc, Dwellir, Gatotech, RadiumBlock, Rotko Networks, Stake Plus, Turboflakes), region codes, 2D / 3D service map, per-operator request volume.
 
 ## Operations (operator-facing)
 
-- [Introduction](https://ibp.rotko.net/operations/basics/introduction): programme overview, trust model.
-- [Operations](https://ibp.rotko.net/operations/basics/operations): curator multisig, member federation.
-- [Requirements](https://ibp.rotko.net/operations/basics/requirements): hardware, datacentre, network, security spec.
-- [Members](https://ibp.rotko.net/operations/auditors/members): current operators + canonical-config link.
-- [Programme history](https://ibp.rotko.net/operations/auditors/progress): 2022 Kusama bounty → 2024 Polkadot → 2026 leaner top-up.
+- [Introduction](https://ibp.network/operations/basics/introduction): programme overview, trust model.
+- [Operations](https://ibp.network/operations/basics/operations): curator multisig, member federation.
+- [Requirements](https://ibp.network/operations/basics/requirements): hardware, datacentre, network, security spec.
+- [Members](https://ibp.network/operations/auditors/members): current operators + canonical-config link.
+- [Programme history](https://ibp.network/operations/auditors/progress): 2022 Kusama bounty → 2024 Polkadot → 2026 leaner top-up.
 
 ## Blog
 
-- [A leaner IBP, what's in the 2026 bounty top-up proposal](https://ibp.rotko.net/blog/leaner): the proposal that drops external-chain coverage and moves Hydration off the public treasury.
+- [A leaner IBP, what's in the 2026 bounty top-up proposal](https://ibp.network/blog/leaner): the proposal that drops external-chain coverage and moves Hydration off the public treasury.
 
 ## Contact
 
-- [Contact](https://ibp.rotko.net/contact): public Matrix room (`!tNVRcjndUHhSDzCKFF:matrix.org`).
+- [Contact](https://ibp.network/contact): public Matrix room (`!tNVRcjndUHhSDzCKFF:matrix.org`).
 - GitHub: <https://github.com/ibp-network>
 - Config repo: <https://github.com/ibp-network/config>
 - Live telemetry: <https://ibdash.dotters.network>

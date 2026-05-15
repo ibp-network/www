@@ -3,6 +3,14 @@ import { createEffect, onCleanup } from 'solid-js';
 const BASE = 'IBP';
 const TAGLINE = 'Public RPC endpoints for Polkadot';
 
+// The single canonical origin. The site is reachable from more than one
+// host (operator mirrors), but search + LLM authority must consolidate
+// on ONE URL or ranking signal is split across hosts. Canonical and
+// og:url are always this origin regardless of which mirror served the
+// page; only the OG *image* stays host-relative (it has to resolve
+// where the file actually is).
+const CANONICAL_ORIGIN = 'https://ibp.network';
+
 /**
  * Set document.title for the current route. SPA routing doesn't update
  * the title automatically — search engines and browser-tab UIs need it.
@@ -47,10 +55,11 @@ export function useDocMeta(meta: DocMeta | (() => DocMeta | null)) {
     if (!m) return;
 
     const fullTitle = `${m.title} · ${BASE} — ${TAGLINE}`;
-    const url =
-      typeof window === 'undefined'
-        ? `https://ibp.rotko.net${m.title === BASE ? '' : ''}`
-        : `${window.location.origin}${window.location.pathname}`;
+    // Always the canonical origin + the current path — never the
+    // serving host. Splitting canonical across mirrors fragments SEO
+    // authority and confuses LLM retrieval about the source of truth.
+    const path = typeof window === 'undefined' ? '' : window.location.pathname;
+    const url = `${CANONICAL_ORIGIN}${path}`;
 
     const prev = {
       title: document.title,
