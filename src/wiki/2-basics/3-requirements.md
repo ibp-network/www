@@ -13,7 +13,7 @@ Every active IBP member meets the spec on this page. It is the operating contrac
 | --- | --- |
 | CPU | Current-generation AMD EPYC or Intel Xeon (server-class). No desktop / consumer parts. |
 | RAM | ECC, ≥ 128 GB per production host. Hosts running the full system-chain set plus collators sit comfortably at 256 GB. |
-| Storage | Enterprise NVMe, PCIe 4.0 or newer, data-centre endurance class, ≥ 2 TB usable per node. RAID or Ceph for redundancy. |
+| Storage | Enterprise NVMe, PCIe 4.0 or newer, data-centre endurance class, ≥ 2 TB usable per node. **Per-host minimum is parity-protected redundancy** — RAIDZ (ZFS), or equivalent RAID 5/6/10 on hardware-RAID or mdraid. Single-disk and RAID 0 are out. Cluster-layer Ceph on top of that floor is the recommended pattern; see the [Software stack](#software-stack) below. |
 | Network | **10 GbE port for transit, multihomed** across two independent transit providers via separate cross-connects, so a single carrier outage or congestion event cannot isolate the node. **1 Gbit/s committed information rate** (CIR) as the baseline operating contract, billed on the standard **95th-percentile** model — the top 5 % of 5-minute samples are discarded, so brief bursts above commit aren't penalised and burst headroom into the remainder of the 10 GbE absorbs peak demand without renegotiating with the carrier. |
 | Management | IPMI / BMC out-of-band on every server. |
 
@@ -55,7 +55,7 @@ The three diagrams below — carried over from the original IBP member-deploymen
 | Layer | Default |
 | --- | --- |
 | Hypervisor | Proxmox VE (KVM-based), dominant across our deployments. VMware and plain libvirt/KVM also acceptable. |
-| Storage | Ceph (block + object), replicated across the cluster. |
+| Storage | **Ceph** (block + object), replicated across the cluster — typically a 3-replica pool so a single-host loss costs no data and no availability. Paired with **Proxmox HA** for the VM layer: on host failure the affected VMs are automatically restarted on a surviving node against the same Ceph-backed volume, so a hardware fault becomes a brief restart rather than a service outage. Per-host RAIDZ-like redundancy (see Hardware row above) is the floor; this Ceph + Proxmox HA combination is the goal. |
 | Guest OS | Ubuntu LTS. Debian, AlmaLinux, NixOS also acceptable. |
 | Reverse proxy + TLS | HAProxy + Let's Encrypt (or operator-owned cert). |
 | Monitoring | Prometheus exporters + Grafana, exposed to the IBP shared dashboards. |
