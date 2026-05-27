@@ -25,6 +25,31 @@ Every active IBP member meets the spec on this page. It is the operating contrac
 - **Renewable energy** or carbon offset for the datacentre.
 - **Rack-distributed quorum.** HA cluster members spread across racks (and rows where possible) so a single PDU, switch, or cooling-zone failure cannot kill a majority.
 
+## Architecture
+
+The three diagrams below — carried over from the original IBP member-deployment design — document how the Datacentre requirements above are wired together. Every active member's site implements this pattern.
+
+### Power Redundancy
+
+<figure style="background:#f4f4f4;border-radius:8px;padding:1rem;margin:1.5rem 0;max-width:760px">
+  <img src="/img/design/power-redundancy.png" alt="Power redundancy diagram: utility feeds A and B from independent substations feed dual UPS banks; each rack is fed by both lines A and B; dual-PSU servers pull one cord from each, single-PSU appliances are paired across the two feeds." style="display:block;width:100%;height:auto" />
+  <figcaption style="font-size:0.875rem;color:rgba(0,0,0,0.65);margin-top:0.6rem;text-align:center">A + B power feeds — independent up to and including the rack. Dual-PSU servers pull one cord from each side; single-PSU appliances are paired across feeds.</figcaption>
+</figure>
+
+### Internet Resiliency
+
+<figure style="background:#f4f4f4;border-radius:8px;padding:1rem;margin:1.5rem 0;max-width:760px">
+  <img src="/img/design/internet-resiliency.png" alt="Internet resiliency diagram: two independent ISPs land in the datacentre over physically separate fibre paths into separate networking gear; member edge routers are dual-homed; BGP balances and fails over between the two." style="display:block;width:100%;height:auto" />
+  <figcaption style="font-size:0.875rem;color:rgba(0,0,0,0.65);margin-top:0.6rem;text-align:center">Multihomed transit — two independent ISPs over separate cross-connects + separate networking gear. The 10 GbE port + 1 Gbit/s 95th-percentile commit above sit on this fabric.</figcaption>
+</figure>
+
+### Rack distribution
+
+<figure style="background:#f4f4f4;border-radius:8px;padding:1rem;margin:1.5rem 0;max-width:760px">
+  <img src="/img/design/rack-distribution.png" alt="Rack distribution diagram: HA cluster nodes spread across multiple racks (and rows where possible), each rack fed by independent power and networking, so loss of any one rack does not break cluster quorum." style="display:block;width:100%;height:auto" />
+  <figcaption style="font-size:0.875rem;color:rgba(0,0,0,0.65);margin-top:0.6rem;text-align:center">Rack-distributed quorum — cluster members spread across racks so a single PDU, switch, or cooling-zone failure cannot down a majority.</figcaption>
+</figure>
+
 ## Software stack
 
 | Layer | Default |
