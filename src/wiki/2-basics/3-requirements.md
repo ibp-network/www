@@ -14,7 +14,7 @@ Every active IBP member meets the spec on this page. It is the operating contrac
 | CPU | Current-generation AMD EPYC or Intel Xeon (server-class). No desktop / consumer parts. |
 | RAM | ECC, ≥ 128 GB per production host. Hosts running the full system-chain set plus collators sit comfortably at 256 GB. |
 | Storage | Enterprise NVMe, PCIe 4.0 or newer, data-centre endurance class, ≥ 2 TB usable per node. RAID or Ceph for redundancy. |
-| Network | 10 GbE minimum on the operator's egress. Two independent ISPs via separate cross-connects. |
+| Network | **10 GbE port for transit, multihomed** across two independent transit providers via separate cross-connects, so a single carrier outage or congestion event cannot isolate the node. **1 Gbit/s committed information rate** (CIR) as the baseline operating contract, billed on the standard **95th-percentile** model — the top 5 % of 5-minute samples are discarded, so brief bursts above commit aren't penalised and burst headroom into the remainder of the 10 GbE absorbs peak demand without renegotiating with the carrier. |
 | Management | IPMI / BMC out-of-band on every server. |
 
 ## Datacentre

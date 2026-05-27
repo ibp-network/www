@@ -144,6 +144,24 @@ When your wallet or dApp queries a hosted RPC, you almost always get the **head*
 | **Finalized reads** (audit-grade) | instant if you ask, **still trust-based** | ~18 s, **cryptographically proven** via state proofs |
 | **Cold start** | one TCP/TLS handshake | warp-sync several seconds before the first read |
 
+### Who you actually trust (per read)
+
+The "verified" cell above is a useful shorthand, but the trust set is worth spelling out so you can pick the right tool intentionally.
+
+**Hosted RPC, head or finalized:** one entity — the operator of the node you happen to be connected to. They could forge a block, omit a transfer, swap a balance, or backdate a state value. You have no cryptographic recourse; you are trusting their honesty (and the honesty of anyone upstream of them, e.g. a CDN). The size of the trust set is **1, unbounded in what they can change**.
+
+**Smoldot, finalized read:**
+- **Chain-spec author** (static trust anchor): genesis hash, initial GRANDPA authority set, bootnode list. Whoever shipped the spec — usually the chain team / `paritytech/chainspecs` — set that anchor once, and everything else is derived from it cryptographically.
+- **GRANDPA validator majority** (≥ 2/3 + 1 of the elected set; ~297 on Polkadot). This is the *same* trust assumption a full node runs under: if a supermajority of validators collude, the chain itself is compromised regardless of how you read it.
+- That's it. The state proof is checked against the finalized header's state root, the header is in a GRANDPA-proven chain extending from the spec's anchor. Cryptographic, no operator in the loop.
+
+**Smoldot, head read** (the unfinalized last few blocks):
+- Everything in the finalized list above, **plus** the **BABE proposer of that specific block**. Smoldot verifies the BABE seal (a legitimate slot leader authored the header) and verifies the state proof against the header's claimed `state_root` — but a light client doesn't re-execute the runtime, so a byzantine proposer could publish a header with a real seal but a *fraudulent* `state_root`. GRANDPA finalisation catches and reverts that within ~18 s; until then the head read is exposed to one-slot-leader misbehaviour. After finality, this extra trust drops out.
+
+**What you do *not* trust in either case:** the peer smoldot happens to be connected to. A malicious peer can relay real BABE-signed blocks or withhold (eclipse you), but they cannot fabricate a block — any forged header fails the seal check. Peer dishonesty is bounded by cryptography; operator dishonesty is bounded by nothing.
+
+So: an RPC head read trusts **one entity, unbounded**. A smoldot head read trusts **a static spec anchor + a 200-validator supermajority + one block proposer (for ≤ 18 s)**. A smoldot finalised read drops to **anchor + supermajority**. Even smoldot's "worst" head-read trust set is qualitatively different from RPC's — distributed, byzantine-resistant, and time-bounded — not just numerically larger.
+
 For 99 % of dApp UX — balance check, "is this NFT mine?", current governance state — there is **no per-read latency penalty** for smoldot. You read head, you get head. Finality genuinely matters only when an action *must* be canonical (a large transfer to an exchange, a slashing-relevant signal, anything where a reorg would be expensive). In those cases smoldot gives you a cryptographic guarantee; an RPC can't, no matter how fast it is — your trust assumption is always the RPC endpoint provider.
 
 Honest summary: pick smoldot when "did this really happen" matters; pick (or pair with) hosted RPC for ergonomics, indexing, and historical state. The 18 s GRANDPA distance only buys you something nothing else can — proven canonicality — and you only spend it when you actually need it.
