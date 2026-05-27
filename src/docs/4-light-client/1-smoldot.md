@@ -117,9 +117,11 @@ console.log('Trustlessly verified balance:', data.free);
 Don't `start()` a new smoldot instance per component. It's a heavy WASM blob that loads once. Create it at app boot, pass the resulting `chain` handles down through context.
 :::
 
-## The finality-latency tradeoff
+## Finality vs head — why this is rarely an actual tradeoff
 
-Most "go fully trustless" advice glosses this over.
+You may see the framing "trustless light clients are slow because they have to wait for finality." That's technically true **only** for the specific case of reading *finalized* state, and it's misleading about real dApp UX. Most frontends — including hosted-RPC ones — never read finalized state. Both smoldot and a hosted RPC return the **head** block by default, at the same latency.
+
+### What "finalized" actually means here
 
 Polkadot finalises blocks with **GRANDPA**. Finality is not the *latest* block; it's the block GRANDPA has voted on, typically **two to three blocks behind the head**:
 
@@ -130,22 +132,28 @@ head        →  block N    (produced ~just now, not yet finalised)
 finalized   →  block N-3  (≈ 18 seconds old at a 6 s block time)
 ```
 
-A *truly* trustless app (one that only ever shows values smoldot has verified against a GRANDPA proof) therefore reads state that is on average **≈ 18 seconds stale**. And it gets worse.
+### What hosted RPC actually returns
 
-- **Every read** of finalised state pays this delay relative to "what just happened on chain."
-- **Every write** signed by the user takes ~18 s before the dApp can show "your transfer landed."
-- **Sequential reads compound.** A user clicking "Send" might wait 18 s for the tx to finalise, then another 18 s for the new balance to read back. Multiply by every step of a multi-step flow (claim → swap → stake) and you're at minute-plus interaction times.
+When your wallet or dApp queries a hosted RPC, you almost always get the **head** value — PAPI's typed accessors default to *best*, `chain_getHeader` returns head, `system_chainHead_v1_*` is head-oriented. The RPC operator's node tracks the same head smoldot would; it just hasn't independently verified anything for you. The same ~18 s gap would apply if you asked the RPC for finalized state, and most apps never bother.
 
-This is not a smoldot bug. It's the cost of cryptographic trustlessness on a 6 s-block chain. Three pragmatic responses:
+### The actual difference
 
-1. **Optimistic UI on best-effort head.** Smoldot exposes the head block too, not just finality. Apps render the unfinalised "best" value immediately (`watchValue(addr, { at: 'best' })`), then reconcile when finality lands. This is how nearly every production trustless dApp ships, including the staking dashboard.
-2. **Use a hosted RPC like IBP for latency-critical paths.** GeoDNS-routed WSS sits at &lt; 50 ms RTT from the operator running your nearest pool. You're trusting that operator to relay honestly, but you can still verify *any* specific value against smoldot later, asynchronously.
-3. **Both, side by side.** What the [hybrid pattern](#hybrid-light-client-for-state-rpc-for-everything-else) below is for: smoldot validates the small set of values you can't afford to be wrong about (your balance, your governance vote), the hosted RPC drives everything that needs to feel instant.
+| | Hosted RPC | Smoldot light client |
+|-|-|-|
+| **Head reads** (normal UX) | instant, **unverified** — you trust the operator | instant, **verified to extend correctly from a known finalized point** |
+| **Finalized reads** (audit-grade) | instant if you ask, **still trust-based** | ~18 s, **cryptographically proven** via state proofs |
+| **Cold start** | one TCP/TLS handshake | warp-sync several seconds before the first read |
 
-The honest summary: *pure* trustless light-client UX is a steep ask. Either accept 18 s per-action latency, or blend in a low-latency RPC and use smoldot as a verification layer rather than a primary read path. Almost every shipped trustless dApp does the second.
+For 99 % of dApp UX — balance check, "is this NFT mine?", current governance state — there is **no per-read latency penalty** for smoldot. You read head, you get head. Finality genuinely matters only when an action *must* be canonical (a large transfer to an exchange, a slashing-relevant signal, anything where a reorg would be expensive). In those cases smoldot gives you a cryptographic guarantee; an RPC can't, no matter how fast it is — your trust assumption is always the RPC endpoint provider.
 
-:::tip Why this is the IBP's value proposition
-We're a public RPC service that exists specifically to make option 2 viable for everyone: no signups, no rate limits, GeoDNS to your nearest operator, < 50 ms RTT. Pair us with smoldot for the "best of both" pattern. We don't expect anyone to go all-in on one or the other; we expect them to layer.
+Honest summary: pick smoldot when "did this really happen" matters; pick (or pair with) hosted RPC for ergonomics, indexing, and historical state. The 18 s GRANDPA distance only buys you something nothing else can — proven canonicality — and you only spend it when you actually need it.
+
+:::tip Why the IBP still matters in this picture
+We exist for the ergonomics layer that smoldot can't cover by itself: no signups, no rate limits, GeoDNS to your nearest operator, archive nodes for historical state, indexer-friendly endpoints. We also run the **WSS bootnodes** that smoldot connects to from the browser — without those, an in-browser light client has no way to discover peers (browsers can't open raw TCP). Bootnodes aren't a trust anchor, just an introducer; see [Bootstrap bootnodes from IBP](#bootstrap-bootnodes-from-ibp) below.
+
+And the *quantity and distribution* of those nodes is itself a performance feature for light clients. The IBP runs dozens of bootnodes spread across continents, so wherever the user's browser is, there's usually a WSS peer within a short RTT. That shortens warp-sync cold-start, lowers gossip latency on head subscriptions, and gives smoldot enough peer diversity to drop a slow or hostile one without stalling. A light client that can only find two peers in Frankfurt behaves very differently from one that finds twenty across Asia, Europe, and the Americas.
+
+Pair us with smoldot when a specific action needs to be cryptographically canonical instead of just "the operator says so." Layering, not picking sides.
 :::
 
 ## Run smoldot in a Web Worker
