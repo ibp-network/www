@@ -25,16 +25,15 @@ A smoldot client is not a slower fallback version of a full RPC. For *reading* f
 ## When to use it
 
 **Use a light client when:**
-- You're building a dApp where users care about decentralisation (DAOs, governance UIs, identity, prediction markets).
-- You're worried about a single RPC operator being compelled to lie or filter requests.
-- You want to ship a static site with no backend: no proxy, no API gateway.
+- You need **cryptographic verifiability** — the dApp itself checks the data, no operator in the trust path. Wallets, governance UIs, identity, anything safety-critical.
+- **Correctness matters more than first-paint latency** — "did this really happen on chain" wins over "did the UI render in 200 ms".
 
-**Stick with WSS when:**
-- You need sub-second response times on first page load (smoldot needs ~5–15s to warp-sync before queries work).
-- You're doing high-frequency reads (smoldot is optimised for correctness, not throughput).
-- You need **archive history or indexer-style queries**. Smoldot only sees state from its warp-sync point forward; historical reads at an old block, event scans, and indexed queries are archive-RPC territory.
+**Use hosted WSS when:**
+- You need **sub-200 ms first paint and instant initial reads** — the cold-start time a light client spends warp-syncing before its first query is not acceptable for your UX.
+- You want to **hide the user's source IP from the chain peer network** — a browser-side light client opens libp2p connections straight from the user's machine, so every peer it talks to sees that address. Hosted WSS terminates that exposure at the operator: the chain network sees the RPC's IP, not the user's. You're trading peer-network visibility for trusting the operator with the user's IP and query stream.
+- You need **archive history or indexer-style queries** — smoldot only sees state from its warp-sync point forward; historical reads at an old block, event scans, and indexed queries are archive-RPC territory.
 
-A common pattern: **WSS for first paint, smoldot for actual state.** Show approximate balances from a hosted RPC immediately, then re-validate from smoldot once it's warped.
+A common pattern: **hosted WSS for first paint, smoldot for the actual state.** Render approximate values from RPC immediately, re-validate from smoldot once it's warped.
 
 ## Install
 
