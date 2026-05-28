@@ -32,7 +32,7 @@ A smoldot client is not a slower fallback version of a full RPC. For *reading* f
 **Stick with WSS when:**
 - You need sub-second response times on first page load (smoldot needs ~5–15s to warp-sync before queries work).
 - You're doing high-frequency reads (smoldot is optimised for correctness, not throughput).
-- You explicitly want operator-trust (an indexed view, archive history, paid SLA) — WSS surfaces that contract honestly. Server-side workloads with the resources to run an actual full node should do that instead; "use WSS on the server" is not a trust-minimising answer.
+- You need **archive history or indexer-style queries**. Smoldot only sees state from its warp-sync point forward; historical reads at an old block, event scans, and indexed queries are archive-RPC territory.
 
 A common pattern: **WSS for first paint, smoldot for actual state.** Show approximate balances from a hosted RPC immediately, then re-validate from smoldot once it's warped.
 
